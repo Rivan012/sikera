@@ -48,16 +48,17 @@ class CaseListPage extends GetView<CasesController> {
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color: isDark ? AppTheme.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                           border: Border.all(
-                            color: isDark ? AppTheme.borderDark : const Color(0xFFE2E8F0),
-                            width: 1.2,
+                            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                            width: 1.0,
                           ),
+                          boxShadow: isDark ? null : AppTheme.cardShadow,
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                             onTap: () {
                               controller.fetchCaseDetail(item.id);
                               Get.toNamed(Routes.CASE_DETAIL, arguments: item.id);
@@ -89,7 +90,7 @@ class CaseListPage extends GetView<CasesController> {
                                       fontWeight: FontWeight.w700,
                                       fontSize: 15,
                                       letterSpacing: -0.2,
-                                      color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+                                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -100,7 +101,7 @@ class CaseListPage extends GetView<CasesController> {
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       height: 1.4,
-                                      color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF64748B),
+                                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                                     ),
                                   ),
                                   const SizedBox(height: 12),

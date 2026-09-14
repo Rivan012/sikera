@@ -129,12 +129,20 @@ class EducationController extends GetxController {
 
     if (response.success && response.data != null) {
       testResult.value = response.data is Map<String, dynamic> ? response.data : {};
+      await fetchModuleDetail(moduleId);
       refreshAllProgress(moduleId);
-      Get.offNamed(Routes.EDUCATION_RESULT, arguments: {
-        'isPretest': true,
-        'moduleId': moduleId,
-        'data': response.data,
-      });
+      Get.offNamed(Routes.EDUCATION_MODULE_DETAIL, arguments: moduleId);
+      Get.snackbar(
+        'Pre-Test Selesai!',
+        'Akses materi modul berhasil dibuka. Silakan pelajari submateri berikut.',
+        backgroundColor: const Color(0xFF0F766E),
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
     } else {
       Get.snackbar(
         'Gagal Submit',

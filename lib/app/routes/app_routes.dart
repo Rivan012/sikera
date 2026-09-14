@@ -28,7 +28,6 @@ abstract class Routes {
   static const FORUM_CREATE = _Paths.FORUM_CREATE;
   static const TRIVIA = _Paths.TRIVIA;
   static const MYTH_FACT = _Paths.MYTH_FACT;
-  static const DIARY = _Paths.DIARY;
 }
 
 abstract class _Paths {
@@ -57,5 +56,4 @@ abstract class _Paths {
   static const FORUM_CREATE = '/forum/create';
   static const TRIVIA = '/gamification/trivia';
   static const MYTH_FACT = '/gamification/myth-fact';
-  static const DIARY = '/gamification/diary';
 }

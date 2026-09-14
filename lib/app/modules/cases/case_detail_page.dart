@@ -80,10 +80,10 @@ class CaseDetailPage extends GetView<CasesController> {
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
                             color: isDark ? AppTheme.primary900.withValues(alpha: 0.35) : AppTheme.primary50,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                             border: Border.all(
                               color: isDark ? AppTheme.primary700.withValues(alpha: 0.4) : AppTheme.primary200,
-                              width: 1.2,
+                              width: 1.0,
                             ),
                           ),
                           child: Column(
@@ -122,11 +122,11 @@ class CaseDetailPage extends GetView<CasesController> {
                         Container(
                           padding: const EdgeInsets.all(16.0),
                           decoration: BoxDecoration(
-                            color: isDark ? AppTheme.surfaceDark : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(16),
+                            color: isDark ? AppTheme.surfaceDark : AppTheme.backgroundLight,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                             border: Border.all(
-                              color: isDark ? AppTheme.borderDark : const Color(0xFFCBD5E1),
-                              width: 1.2,
+                              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                              width: 1.0,
                             ),
                           ),
                           child: Column(
@@ -140,7 +140,7 @@ class CaseDetailPage extends GetView<CasesController> {
                                     'Aspek Hukum (UU TPKS / Regulasi Kampus)',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+                                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
                                     ),
                                   ),
                                 ],
@@ -151,7 +151,7 @@ class CaseDetailPage extends GetView<CasesController> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   height: 1.4,
-                                  color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF334155),
+                                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                                 ),
                               ),
                             ],

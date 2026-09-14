@@ -25,10 +25,10 @@ class ForumListPage extends GetView<ForumController> {
         automaticallyImplyLeading: Navigator.canPop(context),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
+        backgroundColor: AppTheme.primary700,
         foregroundColor: Colors.white,
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
         onPressed: () {
           controller.resetCreateForm();
           Get.toNamed(Routes.FORUM_CREATE);
@@ -85,7 +85,7 @@ class ForumListPage extends GetView<ForumController> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: Text(
-                        'Kantong Tanya Anonim (${filteredPosts.length})',
+                        'Daftar Pertanyaan Mahasiswa (${filteredPosts.length})',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -102,8 +102,8 @@ class ForumListPage extends GetView<ForumController> {
                         margin: const EdgeInsets.only(top: 8),
                         decoration: BoxDecoration(
                           color: isDark ? AppTheme.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
-                          border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                          border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight, width: 1.0),
                         ),
                         child: Center(
                           child: Column(
@@ -111,7 +111,7 @@ class ForumListPage extends GetView<ForumController> {
                               Icon(
                                 Icons.search_off_rounded,
                                 size: 40,
-                                color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF94A3B8),
+                                color: isDark ? AppTheme.textSecondaryDark : AppTheme.textMutedLight,
                               ),
                               const SizedBox(height: 8),
                               Text(
@@ -143,13 +143,13 @@ class ForumListPage extends GetView<ForumController> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.pocketSurfaceDark : AppTheme.pocketSurfaceLight,
-        borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+        color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
-        boxShadow: isDark ? null : AppTheme.jagoSoftShadow,
+        boxShadow: isDark ? null : AppTheme.cardShadow,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,17 +204,17 @@ class ForumListPage extends GetView<ForumController> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
       ),
       child: TextField(
         onChanged: (val) => controller.searchQuery.value = val.trim(),
         style: TextStyle(
           fontSize: 14,
-          color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+          color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
         ),
         decoration: InputDecoration(
           hintText: 'Cari topik atau pertanyaan...',
@@ -299,17 +299,17 @@ class ForumListPage extends GetView<ForumController> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
-        boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+        boxShadow: isDark ? null : AppTheme.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           onTap: () {
             controller.fetchPostDetail(post.id);
             Get.toNamed(Routes.FORUM_DETAIL, arguments: post.id);
@@ -326,7 +326,7 @@ class ForumListPage extends GetView<ForumController> {
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                        borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                       ),
                       child: Text(
                         ForumController.topicShortLabel(post.topic),

@@ -103,10 +103,10 @@ class TriviaPage extends GetView<GamificationController> {
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: isDark ? AppTheme.surfaceDark : Colors.white,
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                               border: Border.all(
-                                color: isDark ? AppTheme.borderDark : const Color(0xFFE2E8F0),
-                                width: 1.2,
+                                color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                                width: 1.0,
                               ),
                             ),
                             child: Column(
@@ -135,7 +135,7 @@ class TriviaPage extends GetView<GamificationController> {
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16,
                                     letterSpacing: -0.2,
-                                    color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+                                    color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
                                   ),
                                 ),
                                 const SizedBox(height: 18),
@@ -149,27 +149,27 @@ class TriviaPage extends GetView<GamificationController> {
                                       decoration: BoxDecoration(
                                         color: isSelected
                                             ? (isDark ? AppTheme.primary900.withValues(alpha: 0.35) : AppTheme.primary50)
-                                            : (isDark ? const Color(0xFF243038) : const Color(0xFFF8FAFC)),
+                                            : (isDark ? const Color(0xFF243038) : AppTheme.backgroundLight),
                                         border: Border.all(
                                           color: isSelected
                                               ? AppTheme.primary700
-                                              : (isDark ? AppTheme.borderDark : const Color(0xFFE2E8F0)),
+                                              : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
                                           width: isSelected ? 1.8 : 1.0,
                                         ),
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                                       ),
                                       child: Material(
                                         color: Colors.transparent,
                                         child: InkWell(
                                           onTap: () => controller.answerTrivia(opt),
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                                           child: Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                             child: Row(
                                               children: [
                                                 Icon(
                                                   isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                                  color: isSelected ? AppTheme.primary700 : const Color(0xFF94A3B8),
+                                                  color: isSelected ? AppTheme.primary700 : AppTheme.textMutedLight,
                                                   size: 22,
                                                 ),
                                                 const SizedBox(width: 12),
@@ -179,7 +179,7 @@ class TriviaPage extends GetView<GamificationController> {
                                                     style: TextStyle(
                                                       fontSize: 13.5,
                                                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                                      color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+                                                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
                                                     ),
                                                   ),
                                                 ),
@@ -202,10 +202,10 @@ class TriviaPage extends GetView<GamificationController> {
                               padding: const EdgeInsets.all(18),
                               decoration: BoxDecoration(
                                 color: isDark ? AppTheme.statusSuccess.withValues(alpha: 0.15) : const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                                 border: Border.all(
                                   color: isDark ? AppTheme.statusSuccess.withValues(alpha: 0.3) : const Color(0xFFA7F3D0),
-                                  width: 1.2,
+                                  width: 1.0,
                                 ),
                               ),
                               child: Column(

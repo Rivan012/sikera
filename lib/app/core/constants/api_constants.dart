@@ -1,7 +1,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl = 'https://sikera.rivan.my.id/api/v1';
+  static const String baseUrl = 'https://sikera.my.id/api/v1';
 
   // Auth
   static const String register = '/auth/register';
@@ -16,13 +16,22 @@ class ApiConstants {
   static const String modules = '/modules';
   static String moduleDetail(int id) => '/modules/$id';
   static String pretest(int id) => '/modules/$id/pretest';
-  static String topic(int moduleId, int topicId) => '/modules/$moduleId/topic/$topicId';
+  static String moduleBanner(int id) => '/modules/$id/banner.svg';
+  static String topic(int moduleId, int topicId) =>
+      '/modules/$moduleId/topic/$topicId';
   static String posttest(int id) => '/modules/$id/posttest';
 
   // Selfcare
   static const String selfcareSummary = '/selfcare/summary';
   static const String period = '/selfcare/period';
+  static const String periodHistory = '/selfcare/period/history';
+  static const String periodPrediction = '/selfcare/period/prediction';
+  static const String periodCalculate = '/selfcare/period/calculate';
+  static const String periodWaliddCalculate =
+      '/selfcare/period/walidd/calculate';
+  static const String periodPbacCalculate = '/selfcare/period/pbac/calculate';
   static const String bmi = '/selfcare/bmi';
+  static const String bmiHistory = '/selfcare/bmi/history';
   static const String bloodGuide = '/selfcare/guides/blood';
   static const String hygieneGuide = '/selfcare/guides/hygiene';
 
@@ -41,5 +50,4 @@ class ApiConstants {
   // Gamification
   static const String trivia = '/gamification/trivia';
   static const String mythFact = '/gamification/myth-fact';
-  static const String diary = '/gamification/diary';
 }

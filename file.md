@@ -52,8 +52,7 @@ lib/
 │   │
 │   ├── gamification/
 │   │   ├── trivia_page.dart
-│   │   ├── myth_fact_page.dart
-│   │   └── diary_page.dart
+│   │   └── myth_fact_page.dart
 │   │
 │   └── profile/
 │       └── profile_page.dart

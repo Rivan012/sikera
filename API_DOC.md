@@ -294,5 +294,3 @@ Content-Type: application/json
 - `POST /api/v1/gamification/trivia` &rarr; Kirim jawaban trivia (`question_id`, `answer`).
 - `GET /api/v1/gamification/myth-fact` &rarr; Ambil kartu Mitos vs Fakta harian.
 - `POST /api/v1/gamification/myth-fact` &rarr; Kirim tebakan (`card_id`, `answer`: `"fact"` / `"myth"`).
-- `GET /api/v1/gamification/diary` &rarr; Daftar riwayat catatan mood.
-- `POST /api/v1/gamification/diary` &rarr; Simpan catatan mood (`mood`, `encrypted_note`, `entry_date`).

@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_view.dart';
 import '../../routes/app_pages.dart';
 import 'education_controller.dart';
+import 'widgets/module_banner.dart';
 
 /// Halaman Daftar Modul Pembelajaran (Route Standalone).
 /// Menerapkan antislop-layoutmobile dan flutter-build-responsive-layout:
@@ -154,28 +155,39 @@ class ModuleListPage extends GetView<EducationController> {
                         margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
                           color: isDark ? AppTheme.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                           border: Border.all(
-                            color: isDark ? AppTheme.borderDark : const Color(0xFFE2EBF0),
-                            width: 1.2,
+                            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                            width: 1.0,
                           ),
-                          boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+                          boxShadow: isDark ? null : AppTheme.cardShadow,
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                             onTap: () {
                               controller.fetchModuleDetail(module.id);
                               Get.toNamed(Routes.EDUCATION_MODULE_DETAIL, arguments: module.id)?.then((_) {
                                 controller.fetchModules(forceRefresh: true);
                               });
                             },
-                            child: Padding(
-                              padding: const EdgeInsets.all(18.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Banner Visual Modul
+                                ModuleBanner(
+                                  bannerImage: module.bannerImage,
+                                  moduleNumber: module.moduleNumber,
+                                  title: module.title,
+                                  height: 125,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -286,9 +298,11 @@ class ModuleListPage extends GetView<EducationController> {
                                 ],
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      );
+                      ),
+                    ),
+                  );
                     }),
                     const SizedBox(height: 16),
                   ],

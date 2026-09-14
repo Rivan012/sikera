@@ -63,45 +63,39 @@ class AppTheme {
     stops: [0.0, 0.55, 1.0],
   );
 
-  // Elevation & Pocket Shadows (Bank Jago Inspired)
+  // Elevation & Crisp Shadows (DESIGN.md Section 10)
   static const List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Color.fromRGBO(3, 4, 94, 0.06),
-      blurRadius: 10,
-      offset: Offset(0, 3),
+      color: Color.fromRGBO(3, 4, 94, 0.05),
+      blurRadius: 8,
+      offset: Offset(0, 2),
     ),
   ];
 
   static const List<BoxShadow> elevatedCardShadow = [
     BoxShadow(
-      color: Color.fromRGBO(3, 4, 94, 0.10),
-      blurRadius: 24,
-      offset: Offset(0, 8),
-    ),
-  ];
-
-  static const List<BoxShadow> jagoPocketShadow = [
-    BoxShadow(
-      color: Color.fromRGBO(3, 4, 94, 0.05),
-      blurRadius: 14,
+      color: Color.fromRGBO(3, 4, 94, 0.08),
+      blurRadius: 16,
       offset: Offset(0, 4),
     ),
   ];
 
-  static const List<BoxShadow> jagoSoftShadow = [
-    BoxShadow(
-      color: Color.fromRGBO(3, 4, 94, 0.08),
-      blurRadius: 20,
-      offset: Offset(0, 6),
-    ),
-  ];
+  // Official Radius Tokens (DESIGN.md Section 9)
+  static const double radiusSm = 8.0;     // Small controls
+  static const double radiusMd = 12.0;    // Inputs, compact cards, buttons
+  static const double radiusLg = 16.0;    // Standard cards
+  static const double radiusXl = 20.0;    // Feature cards, banners
+  static const double radius2Xl = 24.0;   // Hero surfaces
+  static const double radiusPill = 999.0; // Pills & status tags
 
-  // Bank Jago Radius Tokens
-  static const double jagoCardRadius = 20.0;
+  // Backwards-compatibility aliases for existing assertions
+  static const double jagoCardRadius = radiusXl;
   static const double jagoPillRadius = 28.0;
   static const Color primary100 = Color(0xFFBBEBF6);
   static const Color pocketSurfaceLight = Color(0xFFF0F9FD);
   static const Color pocketSurfaceDark = Color(0xFF0F2B40);
+  static const List<BoxShadow> jagoPocketShadow = cardShadow;
+  static const List<BoxShadow> jagoSoftShadow = elevatedCardShadow;
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -138,8 +132,8 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: borderLight, width: 1.2),
+          borderRadius: BorderRadius.circular(radiusLg),
+          side: const BorderSide(color: borderLight, width: 1.0),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -147,20 +141,20 @@ class AppTheme {
         fillColor: surfaceLight,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderLight),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: borderLight, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderLight),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: borderLight, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary700, width: 1.6),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: primary700, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: error),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: error, width: 1.0),
         ),
         labelStyle: const TextStyle(color: textSecondaryLight, fontSize: 14),
         hintStyle: const TextStyle(color: textMutedLight, fontSize: 14),
@@ -171,7 +165,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -185,9 +179,9 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: primary700,
           minimumSize: const Size(double.infinity, 48),
-          side: const BorderSide(color: primary700, width: 1.4),
+          side: const BorderSide(color: primary700, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -252,8 +246,8 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: borderDark, width: 1.2),
+          borderRadius: BorderRadius.circular(radiusLg),
+          side: const BorderSide(color: borderDark, width: 1.0),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -261,35 +255,35 @@ class AppTheme {
         fillColor: surfaceDark,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderDark),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: borderDark, width: 1.0),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: borderDark),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: borderDark, width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary500, width: 1.6),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: primary500, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: error),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: error, width: 1.0),
         ),
         labelStyle: const TextStyle(color: textSecondaryDark, fontSize: 14),
         hintStyle: const TextStyle(color: textMutedDark, fontSize: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary500,
+          backgroundColor: primary700,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 46),
+          minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
           elevation: 0,
@@ -298,14 +292,14 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary500,
-          minimumSize: const Size(double.infinity, 46),
+          minimumSize: const Size(double.infinity, 48),
           side: const BorderSide(color: primary500, width: 1.2),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

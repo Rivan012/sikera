@@ -44,7 +44,7 @@ void main() {
       expect(dark.colorScheme.primary, AppTheme.primary500);
     });
 
-    test('Button themes enforce minimum 44px tap targets', () {
+    test('Button themes enforce minimum 44px tap targets and 12px radius', () {
       final light = AppTheme.lightTheme;
       final elevatedMinSize = light.elevatedButtonTheme.style?.minimumSize?.resolve({});
       final outlinedMinSize = light.outlinedButtonTheme.style?.minimumSize?.resolve({});
@@ -53,7 +53,18 @@ void main() {
       expect(outlinedMinSize?.height, greaterThanOrEqualTo(44.0));
     });
 
-    test('Bank Jago inspired design tokens are defined', () {
+    test('Official DESIGN.md radius tokens are defined', () {
+      expect(AppTheme.radiusSm, 8.0);
+      expect(AppTheme.radiusMd, 12.0);
+      expect(AppTheme.radiusLg, 16.0);
+      expect(AppTheme.radiusXl, 20.0);
+      expect(AppTheme.radius2Xl, 24.0);
+      expect(AppTheme.radiusPill, 999.0);
+      expect(AppTheme.cardShadow, isNotEmpty);
+      expect(AppTheme.elevatedCardShadow, isNotEmpty);
+    });
+
+    test('Backwards-compatibility tokens are defined', () {
       expect(AppTheme.jagoCardRadius, 20.0);
       expect(AppTheme.jagoPillRadius, 28.0);
       expect(AppTheme.pocketSurfaceLight, const Color(0xFFF0F9FD));

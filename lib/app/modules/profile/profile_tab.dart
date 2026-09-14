@@ -75,12 +75,12 @@ class ProfileTab extends GetView<ProfileController> {
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
-        boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+        boxShadow: isDark ? null : AppTheme.cardShadow,
       ),
       child: Column(
         children: [
@@ -138,7 +138,7 @@ class ProfileTab extends GetView<ProfileController> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF243038) : const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -161,7 +161,7 @@ class ProfileTab extends GetView<ProfileController> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF243038) : const Color(0xFFFFEDD5),
-                  borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -191,12 +191,12 @@ class ProfileTab extends GetView<ProfileController> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
-        boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+        boxShadow: isDark ? null : AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,12 +244,12 @@ class ProfileTab extends GetView<ProfileController> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.2,
+          width: 1.0,
         ),
-        boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+        boxShadow: isDark ? null : AppTheme.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,12 +309,12 @@ class ProfileTab extends GetView<ProfileController> {
 
   Widget _buildLogoutButton(BuildContext context) {
     return SizedBox(
-      height: 50,
+      height: 48,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppTheme.statusError,
-          side: BorderSide(color: AppTheme.statusError.withValues(alpha: 0.35), width: 1.2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+          side: BorderSide(color: AppTheme.statusError.withValues(alpha: 0.35), width: 1.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
         ),
         onPressed: () => _confirmLogout(context),
         icon: const Icon(Icons.logout_rounded, size: 18),
@@ -329,7 +329,7 @@ class ProfileTab extends GetView<ProfileController> {
   void _confirmLogout(BuildContext context) {
     Get.dialog(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
         title: const Text('Konfirmasi Keluar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         content: const Text(
           'Apakah Anda yakin ingin keluar dari akun SIKERA? Progres belajar Anda tetap tersimpan aman di server.',
@@ -344,7 +344,7 @@ class ProfileTab extends GetView<ProfileController> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.statusError,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
             ),
             onPressed: () {
               Get.back();

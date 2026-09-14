@@ -127,13 +127,32 @@ class ResultPage extends GetView<EducationController> {
               ),
               const Spacer(),
 
-              ElevatedButton(
+              ElevatedButton.icon(
+                icon: Icon(isPretest ? Icons.menu_book_rounded : Icons.home_rounded),
                 onPressed: () {
-                  controller.refreshAllProgress();
-                  Get.offAllNamed(Routes.HOME);
+                  final int moduleId = args['moduleId'] is int
+                      ? args['moduleId'] as int
+                      : (int.tryParse(args['moduleId']?.toString() ?? '') ?? 0);
+                  controller.refreshAllProgress(moduleId > 0 ? moduleId : null);
+                  if (isPretest && moduleId > 0) {
+                    controller.fetchModuleDetail(moduleId);
+                    Get.offNamed(Routes.EDUCATION_MODULE_DETAIL, arguments: moduleId);
+                  } else {
+                    Get.offAllNamed(Routes.HOME);
+                  }
                 },
-                child: const Text('Kembali ke Beranda'),
+                label: Text(isPretest ? 'Lanjut ke Materi Modul' : 'Kembali ke Beranda'),
               ),
+              if (isPretest) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    controller.refreshAllProgress();
+                    Get.offAllNamed(Routes.HOME);
+                  },
+                  child: const Text('Kembali ke Beranda'),
+                ),
+              ],
             ],
           ),
         ),

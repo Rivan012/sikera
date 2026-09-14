@@ -82,6 +82,7 @@ class ModuleDetailModel {
   final String title;
   final String? subtitle;
   final String? description;
+  final String? bannerImage;
   final bool isLocked;
   final bool hasPretest;
   final bool allTopicsDone;
@@ -96,6 +97,7 @@ class ModuleDetailModel {
     required this.title,
     this.subtitle,
     this.description,
+    this.bannerImage,
     this.isLocked = false,
     required this.hasPretest,
     this.allTopicsDone = false,
@@ -138,6 +140,7 @@ class ModuleDetailModel {
       title: mod['title']?.toString() ?? '',
       subtitle: mod['subtitle']?.toString(),
       description: mod['description']?.toString() ?? mod['subtitle']?.toString(),
+      bannerImage: mod['banner_image']?.toString() ?? json['banner_image']?.toString(),
       isLocked: json['is_locked'] == true || mod['is_locked'] == true,
       hasPretest: json['has_pretest'] == true || mod['has_pretest'] == true,
       allTopicsDone: json['all_topics_done'] == true || mod['all_topics_done'] == true,

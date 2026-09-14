@@ -20,7 +20,6 @@ import '../modules/forum/forum_binding.dart';
 import '../modules/forum/forum_create_page.dart';
 import '../modules/forum/forum_detail_page.dart';
 import '../modules/forum/forum_list_page.dart';
-import '../modules/gamification/diary_page.dart';
 import '../modules/gamification/gamification_binding.dart';
 import '../modules/gamification/myth_fact_page.dart';
 import '../modules/gamification/trivia_page.dart';
@@ -162,11 +161,6 @@ class AppPages {
     GetPage(
       name: _Paths.MYTH_FACT,
       page: () => const MythFactPage(),
-      binding: GamificationBinding(),
-    ),
-    GetPage(
-      name: _Paths.DIARY,
-      page: () => const DiaryPage(),
       binding: GamificationBinding(),
     ),
   ];

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
@@ -17,19 +16,11 @@ class GamificationController extends GetxController {
   final mythFactCard = Rxn<MythFactCardModel>();
   final mythFactExplanation = Rxn<String>();
 
-  // Diary
-  final diaryEntries = <MoodDiaryModel>[].obs;
-  final selectedMood = 'Senang'.obs;
-  final moodNoteController = TextEditingController();
-
-  final moods = ['Sangat Senang', 'Senang', 'Biasa Saja', 'Cemas / Gelisah', 'Sedih / Lelah'];
-
   @override
   void onInit() {
     super.onInit();
     fetchTrivia();
     fetchMythFact();
-    fetchDiary();
   }
 
   Future<void> fetchTrivia({bool forceRefresh = false}) async {
@@ -134,59 +125,5 @@ class GamificationController extends GetxController {
     } else {
       mythFactExplanation.value = mythFactCard.value?.explanation;
     }
-  }
-
-  Future<void> fetchDiary() async {
-    final response = await ApiService.get(ApiConstants.diary);
-    if (response.success && response.data != null) {
-      List? rawList;
-      if (response.data is List) {
-        rawList = response.data as List;
-      } else if (response.data is Map) {
-        final map = response.data as Map;
-        if (map['entries'] is List) {
-          rawList = map['entries'] as List;
-        } else if (map['data'] is List) {
-          rawList = map['data'] as List;
-        }
-      }
-      if (rawList != null) {
-        diaryEntries.value = rawList
-            .map((e) => MoodDiaryModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-    }
-  }
-
-  Future<void> saveDiaryEntry() async {
-    final note = moodNoteController.text.trim();
-    final today = DateTime.now();
-    final dateStr = "${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-
-    final response = await ApiService.post(
-      ApiConstants.diary,
-      body: {
-        'mood': selectedMood.value,
-        'encrypted_note': note,
-        'entry_date': dateStr,
-      },
-    );
-
-    if (response.success) {
-      moodNoteController.clear();
-      Get.snackbar(
-        'Tersimpan',
-        'Catatan mood harian berhasil disimpan.',
-        backgroundColor: Colors.teal.shade700,
-        colorText: Colors.white,
-      );
-      fetchDiary();
-    }
-  }
-
-  @override
-  void onClose() {
-    moodNoteController.dispose();
-    super.onClose();
   }
 }

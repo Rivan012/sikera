@@ -53,26 +53,3 @@ class MythFactCardModel {
     );
   }
 }
-
-class MoodDiaryModel {
-  final int id;
-  final String mood;
-  final String? encryptedNote;
-  final String entryDate;
-
-  MoodDiaryModel({
-    required this.id,
-    required this.mood,
-    this.encryptedNote,
-    required this.entryDate,
-  });
-
-  factory MoodDiaryModel.fromJson(Map<String, dynamic> json) {
-    return MoodDiaryModel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      mood: json['mood']?.toString() ?? 'Senang',
-      encryptedNote: json['encrypted_note']?.toString() ?? json['note']?.toString(),
-      entryDate: json['entry_date']?.toString() ?? '',
-    );
-  }
-}

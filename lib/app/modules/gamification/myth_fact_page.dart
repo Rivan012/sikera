@@ -49,12 +49,12 @@ class MythFactPage extends GetView<GamificationController> {
                             padding: const EdgeInsets.all(24.0),
                             decoration: BoxDecoration(
                               color: isDark ? AppTheme.surfaceDark : Colors.white,
-                              borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+                              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                               border: Border.all(
                                 color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                                width: 1.2,
+                                width: 1.0,
                               ),
-                              boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+                              boxShadow: isDark ? null : AppTheme.cardShadow,
                             ),
                             child: Column(
                               children: [
@@ -62,7 +62,7 @@ class MythFactPage extends GetView<GamificationController> {
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                                   decoration: BoxDecoration(
                                     color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                                    borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
+                                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                                   ),
                                   child: Text(
                                     card.category.toUpperCase(),
@@ -101,12 +101,12 @@ class MythFactPage extends GetView<GamificationController> {
                                   children: [
                                     Expanded(
                                       child: SizedBox(
-                                        height: 52,
+                                        height: 48,
                                         child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
+                                            backgroundColor: AppTheme.primary700,
                                             foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
                                             elevation: 0,
                                           ),
                                           onPressed: () => controller.answerMythFact('fact'),
@@ -117,12 +117,12 @@ class MythFactPage extends GetView<GamificationController> {
                                     const SizedBox(width: 14),
                                     Expanded(
                                       child: SizedBox(
-                                        height: 52,
+                                        height: 48,
                                         child: ElevatedButton(
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: AppTheme.statusError,
                                             foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
                                             elevation: 0,
                                           ),
                                           onPressed: () => controller.answerMythFact('myth'),
@@ -143,10 +143,10 @@ class MythFactPage extends GetView<GamificationController> {
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: isDark ? AppTheme.statusSuccess.withValues(alpha: 0.15) : const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+                                borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                                 border: Border.all(
                                   color: isDark ? AppTheme.statusSuccess.withValues(alpha: 0.3) : const Color(0xFFA7F3D0),
-                                  width: 1.2,
+                                  width: 1.0,
                                 ),
                               ),
                               child: Column(

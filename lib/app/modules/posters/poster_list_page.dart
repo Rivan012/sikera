@@ -48,16 +48,17 @@ class PosterListPage extends GetView<PostersController> {
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           color: isDark ? AppTheme.surfaceDark : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                           border: Border.all(
-                            color: isDark ? AppTheme.borderDark : const Color(0xFFE2E8F0),
-                            width: 1.2,
+                            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+                            width: 1.0,
                           ),
+                          boxShadow: isDark ? null : AppTheme.cardShadow,
                         ),
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                             onTap: () {
                               controller.selectedPoster.value = poster;
                               Get.toNamed(Routes.POSTER_DETAIL, arguments: poster);
@@ -71,7 +72,7 @@ class PosterListPage extends GetView<PostersController> {
                                     height: 54,
                                     decoration: BoxDecoration(
                                       color: isDark ? AppTheme.primary900.withValues(alpha: 0.35) : AppTheme.primary50,
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                                     ),
                                     child: Icon(Icons.image_rounded, color: isDark ? AppTheme.primary200 : AppTheme.primary700, size: 28),
                                   ),
@@ -86,7 +87,7 @@ class PosterListPage extends GetView<PostersController> {
                                             fontWeight: FontWeight.w700,
                                             fontSize: 14.5,
                                             letterSpacing: -0.2,
-                                            color: isDark ? AppTheme.textPrimaryDark : const Color(0xFF0F172A),
+                                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
                                           ),
                                         ),
                                         if (poster.description != null && poster.description!.isNotEmpty) ...[
@@ -98,7 +99,7 @@ class PosterListPage extends GetView<PostersController> {
                                             style: TextStyle(
                                               fontSize: 12,
                                               height: 1.35,
-                                              color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF64748B),
+                                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
                                             ),
                                           ),
                                         ],

@@ -65,12 +65,12 @@ class LoginPage extends GetView<LoginController> {
                     padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
                       color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(AppTheme.jagoCardRadius),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                       border: Border.all(
                         color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                        width: 1.2,
+                        width: 1.0,
                       ),
-                      boxShadow: isDark ? null : AppTheme.jagoPocketShadow,
+                      boxShadow: isDark ? null : AppTheme.cardShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,12 +112,12 @@ class LoginPage extends GetView<LoginController> {
                             )),
                         const SizedBox(height: 24),
                         Obx(() => SizedBox(
-                              height: 50,
+                              height: 48,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
+                                  backgroundColor: AppTheme.primary700,
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
                                   elevation: 0,
                                 ),
                                 onPressed: controller.isLoading.value ? null : controller.login,
