@@ -58,39 +58,23 @@ class MythFactPage extends GetView<GamificationController> {
                             ),
                             child: Column(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                                  ),
-                                  child: Text(
-                                    card.category.toUpperCase(),
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 11,
-                                      color: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                                      letterSpacing: 0.5,
-                                    ),
+                                Text(
+                                  card.category,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                    color: isDark
+                                        ? AppTheme.primary200
+                                        : AppTheme.primary700,
                                   ),
                                 ),
-                                const SizedBox(height: 20),
-                                Container(
-                                  width: 58,
-                                  height: 58,
-                                  decoration: BoxDecoration(
-                                    color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(Icons.help_outline_rounded, color: isDark ? AppTheme.primary500 : AppTheme.primary700, size: 30),
-                                ),
-                                const SizedBox(height: 18),
+                                const SizedBox(height: 16),
                                 Text(
                                   '"${card.statement}"',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    fontSize: 17,
+                                    fontSize: 18,
                                     height: 1.45,
                                     letterSpacing: -0.2,
                                     color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
@@ -110,7 +94,7 @@ class MythFactPage extends GetView<GamificationController> {
                                             elevation: 0,
                                           ),
                                           onPressed: () => controller.answerMythFact('fact'),
-                                          child: const Text('FAKTA', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.5)),
+                                          child: const Text('Fakta', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                                         ),
                                       ),
                                     ),
@@ -126,7 +110,7 @@ class MythFactPage extends GetView<GamificationController> {
                                             elevation: 0,
                                           ),
                                           onPressed: () => controller.answerMythFact('myth'),
-                                          child: const Text('MITOS', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: 0.5)),
+                                          child: const Text('Mitos', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
                                         ),
                                       ),
                                     ),

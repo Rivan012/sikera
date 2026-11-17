@@ -1,14 +1,68 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
   static const String _keyToken = 'auth_token';
   static const String _keyUser = 'auth_user_json';
   static const String _keyThemeMode = 'theme_mode';
+  static const String _keyOnboarding = 'onboarding_completed';
 
   static SharedPreferences? _prefs;
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    if (kDebugMode && const bool.fromEnvironment('RESET_ONBOARDING')) {
+      await resetOnboarding();
+    }
+  }
+
+  static bool get onboardingCompleted =>
+      _prefs?.getBool(_keyOnboarding) ?? false;
+
+  static String? get currentAccountId {
+    try {
+      final user = jsonDecode(getUserJson() ?? '{}');
+      final id = user is Map ? int.tryParse('${user['id']}') : null;
+      return id != null && id > 0 ? '$id' : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool get termsPrivacyAccepted {
+    final id = currentAccountId;
+    return hasToken &&
+        id != null &&
+        (_prefs?.getBool('terms_privacy_accepted_$id') ?? false);
+  }
+
+  static Future<void> acceptTermsPrivacy() async {
+    final id = currentAccountId;
+    if (!hasToken || id == null) {
+      throw StateError('Akun tidak tersedia. Masuk kembali.');
+    }
+    final key = 'terms_privacy_accepted_$id';
+    try {
+      if (await _prefs?.setBool(key, true) != true) {
+        throw StateError('Persetujuan belum tersimpan.');
+      }
+    } catch (_) {
+      await _prefs?.remove(key);
+      rethrow;
+    }
+  }
+
+  static Future<void> completeOnboarding() async {
+    if (await _prefs?.setBool(_keyOnboarding, true) != true) {
+      throw StateError('Status onboarding gagal disimpan.');
+    }
+  }
+
+  static Future<void> resetOnboarding() async {
+    if (await _prefs?.remove(_keyOnboarding) != true) {
+      throw StateError('Status onboarding gagal direset.');
+    }
   }
 
   static Future<void> setToken(String token) async {

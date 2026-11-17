@@ -56,20 +56,23 @@ class TriviaPage extends GetView<GamificationController> {
                           Container(
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              gradient: AppTheme.brandGradient,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primary900.withValues(alpha: 0.25),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
+                              color: isDark
+                                  ? AppTheme.softAccentSurfaceDark
+                                  : AppTheme.primary50,
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.radiusLg,
+                              ),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(Icons.quiz_rounded, color: AppTheme.primary50, size: 28),
-                                SizedBox(width: 14),
+                                Icon(
+                                  Icons.quiz_rounded,
+                                  color: isDark
+                                      ? AppTheme.primary200
+                                      : AppTheme.primary700,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,15 +82,19 @@ class TriviaPage extends GetView<GamificationController> {
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                                          color: isDark
+                                              ? AppTheme.textPrimaryDark
+                                              : AppTheme.primary900,
                                         ),
                                       ),
-                                      SizedBox(height: 3),
+                                      const SizedBox(height: 3),
                                       Text(
                                         'Jawab kuis singkat kesehatan reproduksi untuk menambah poin dan memperkuat wawasan.',
                                         style: TextStyle(
                                           fontSize: 12.5,
-                                          color: AppTheme.primary50,
+                                          color: isDark
+                                              ? AppTheme.textSecondaryDark
+                                              : AppTheme.textSecondaryLight,
                                         ),
                                       ),
                                     ],
@@ -112,23 +119,15 @@ class TriviaPage extends GetView<GamificationController> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? AppTheme.primary900.withValues(alpha: 0.4) : AppTheme.primary50,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    'PERTANYAAN HARI INI',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: isDark ? AppTheme.primary200 : AppTheme.primary700,
-                                      letterSpacing: 0.4,
-                                    ),
+                                Text(
+                                  'Pertanyaan Hari Ini',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark ? AppTheme.primary200 : AppTheme.primary700,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 8),
                                 Text(
                                   trivia.question,
                                   style: TextStyle(

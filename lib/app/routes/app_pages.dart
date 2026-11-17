@@ -29,6 +29,12 @@ import '../modules/posters/poster_detail_page.dart';
 import '../modules/posters/poster_list_page.dart';
 import '../modules/posters/posters_binding.dart';
 import '../modules/splash/splash_page.dart';
+import '../modules/onboarding/onboarding_controller.dart';
+import '../modules/onboarding/onboarding_page.dart';
+import '../modules/legal/legal_guard.dart';
+import '../modules/legal/terms_of_service_page.dart';
+import '../modules/legal/privacy_policy_page.dart';
+import '../modules/legal/terms_privacy_consent_page.dart';
 import '../modules/selfcare/blood_guide_page.dart';
 import '../modules/selfcare/bmi_page.dart';
 import '../modules/selfcare/hygiene_guide_page.dart';
@@ -41,15 +47,30 @@ part 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  static const INITIAL = Routes.HOME;
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
     GetPage(
-      name: _Paths.SPLASH,
-      page: () => const SplashPage(),
+      name: _Paths.TERMS_OF_SERVICE,
+      page: () => const TermsOfServicePage(),
+    ),
+    GetPage(name: _Paths.PRIVACY_POLICY, page: () => const PrivacyPolicyPage()),
+    GetPage(
+      name: _Paths.TERMS_PRIVACY_CONSENT,
+      page: () => const TermsPrivacyConsentPage(),
+      middlewares: [LegalGuard(consentPage: true)],
     ),
     GetPage(
+      name: _Paths.ONBOARDING,
+      page: () => const OnboardingPage(),
+      binding: BindingsBuilder(() => Get.lazyPut(() => OnboardingController())),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    GetPage(name: _Paths.SPLASH, page: () => const SplashPage()),
+    GetPage(
       name: _Paths.HOME,
+      middlewares: [LegalGuard()],
       page: () => const MainNavPage(),
       binding: MainNavBinding(),
     ),

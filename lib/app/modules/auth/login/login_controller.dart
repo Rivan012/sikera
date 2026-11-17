@@ -39,10 +39,7 @@ class LoginController extends GetxController {
 
     final response = await ApiService.post(
       ApiConstants.login,
-      body: {
-        'email': email,
-        'password': password,
-      },
+      body: {'email': email, 'password': password},
       auth: false,
     );
 
@@ -59,9 +56,14 @@ class LoginController extends GetxController {
         await StorageService.setUserJson(jsonEncode(user));
       }
 
-      Get.offAllNamed(Routes.HOME);
+      Get.offAllNamed(
+        StorageService.termsPrivacyAccepted
+            ? Routes.HOME
+            : Routes.TERMS_PRIVACY_CONSENT,
+      );
     } else {
-      errorMessage.value = response.message ?? 'Gagal masuk. Periksa email dan kata sandi.';
+      errorMessage.value =
+          response.message ?? 'Gagal masuk. Periksa email dan kata sandi.';
       Get.snackbar(
         'Gagal Masuk',
         errorMessage.value,

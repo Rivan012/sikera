@@ -51,49 +51,49 @@ class ForumDetailPage extends GetView<ForumController> {
                               children: [
                                 // Kartu Pertanyaan Mahasiswa
                                 Container(
-                                  padding: const EdgeInsets.all(18),
+                                  padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
-                                    gradient: AppTheme.brandGradient,
-                                    borderRadius: BorderRadius.circular(18),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.primary900.withValues(alpha: 0.25),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ],
+                                    color: isDark
+                                        ? AppTheme.softAccentSurfaceDark
+                                        : AppTheme.primary50,
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusLg,
+                                    ),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.2),
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              ForumController.topicLabel(post.topic),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.w700,
-                                              ),
+                                          Text(
+                                            ForumController.topicLabel(post.topic),
+                                            style: TextStyle(
+                                              color: isDark
+                                                  ? AppTheme.primary200
+                                                  : AppTheme.primary700,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
                                             ),
                                           ),
                                           const Spacer(),
-                                          const Icon(Icons.security_rounded, size: 14, color: AppTheme.primary50),
+                                          Icon(
+                                            Icons.security_rounded,
+                                            size: 14,
+                                            color: isDark
+                                                ? AppTheme.textSecondaryDark
+                                                : AppTheme.textSecondaryLight,
+                                          ),
                                           const SizedBox(width: 4),
                                           Text(
                                             post.anonymousAlias?.isNotEmpty == true
                                                 ? '${post.anonymousAlias!} (Terlindungi)'
                                                 : (post.isAnonymous ? 'Anonim (Terlindungi)' : 'Mahasiswa'),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w600,
-                                              color: AppTheme.primary50,
+                                              color: isDark
+                                                  ? AppTheme.textSecondaryDark
+                                                  : AppTheme.textSecondaryLight,
                                             ),
                                           ),
                                         ],
@@ -101,20 +101,24 @@ class ForumDetailPage extends GetView<ForumController> {
                                       const SizedBox(height: 12),
                                       Text(
                                         post.title,
-                                        style: const TextStyle(
-                                          fontSize: 17,
+                                        style: TextStyle(
+                                          fontSize: 18,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                                          color: isDark
+                                              ? AppTheme.textPrimaryDark
+                                              : AppTheme.primary900,
                                           letterSpacing: -0.2,
                                         ),
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
                                         post.content,
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
+                                        style: TextStyle(
+                                          fontSize: 14,
                                           height: 1.5,
-                                          color: AppTheme.primary50,
+                                          color: isDark
+                                              ? AppTheme.textPrimaryDark
+                                              : AppTheme.textPrimaryLight,
                                         ),
                                       ),
                                     ],

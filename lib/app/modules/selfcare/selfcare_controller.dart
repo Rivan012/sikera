@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/storage_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/selfcare_model.dart';
 import '../../data/models/period_assessment_model.dart';
 import '../home/home_controller.dart';
@@ -23,6 +24,7 @@ class SelfcareController extends GetxController {
   final isPredictionLoading = false.obs;
   final isCalculatingSimulation = false.obs;
   final historyError = ''.obs;
+  final bmiHistoryError = ''.obs;
   final predictionError = ''.obs;
   final simulationError = ''.obs;
   final isSavingPeriod = false.obs;
@@ -218,6 +220,7 @@ class SelfcareController extends GetxController {
   Future<void> fetchBmiHistory() async {
     if (!StorageService.hasToken || isBmiHistoryLoading.value) return;
     isBmiHistoryLoading.value = true;
+    bmiHistoryError.value = '';
     try {
       final response = await ApiService.get(ApiConstants.bmiHistory);
       if (response.success) {
@@ -232,7 +235,13 @@ class SelfcareController extends GetxController {
             logs.whereType<Map<String, dynamic>>().map(BmiRecordModel.fromJson),
           );
         }
+      } else {
+        bmiHistoryError.value =
+            response.message ?? 'Riwayat pengukuran IMT belum dapat dimuat.';
       }
+    } catch (_) {
+      bmiHistoryError.value =
+          'Format riwayat IMT tidak dapat dibaca. Coba lagi.';
     } finally {
       isBmiHistoryLoading.value = false;
     }
@@ -520,7 +529,7 @@ class SelfcareController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Masukkan berat dan tinggi badan yang valid.',
-        backgroundColor: Colors.amber.shade700,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -546,38 +555,18 @@ class SelfcareController extends GetxController {
       Get.snackbar(
         'Perhitungan Berhasil',
         'Data IMT dan rekomendasi gizi berhasil disimpan.',
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
       );
       fetchSummary(forceRefresh: true);
       fetchBmiHistory();
     } else {
-      // Fallback kalkulasi mandiri jika offline
-      final heightInMeters = height / 100;
-      final score = weight / (heightInMeters * heightInMeters);
-      String category = 'Normal';
-      String advice =
-          'Pertahankan pola makan seimbang dan aktivitas fisik teratur untuk menjaga kestabilan hormonal.';
-      if (score < 18.5) {
-        category = 'Kekurangan Berat Badan';
-        advice =
-            'Tingkatkan asupan kalori bernutrisi dan protein untuk mendukung pematangan sel telur dan siklus haid normal.';
-      } else if (score >= 25.0 && score < 30.0) {
-        category = 'Overweight';
-        advice =
-            'Perhatikan porsi makan dan perbanyak serat untuk mencegah resistensi insulin yang dapat memengaruhi siklus reproduksi.';
-      } else if (score >= 30.0) {
-        category = 'Obesitas';
-        advice =
-            'Konsultasikan dengan dokter gizi untuk program penurunan berat badan aman guna memelihara kesehatan sistem reproduksi.';
-      }
-
-      bmiResult.value = BmiRecordModel(
-        weightKg: weight,
-        heightCm: height,
-        bmiScore: double.parse(score.toStringAsFixed(1)),
-        category: category,
-        advice: advice,
+      Get.snackbar(
+        'Gagal Menyimpan IMT',
+        response.message ??
+            'Perhitungan IMT belum dapat disimpan ke server. Periksa koneksi Anda.',
+        backgroundColor: AppTheme.error,
+        colorText: Colors.white,
       );
     }
   }

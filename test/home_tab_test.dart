@@ -54,8 +54,6 @@ void main() {
     Routes.SELFCARE_PERIOD,
     Routes.TRIVIA,
     Routes.SELFCARE,
-    Routes.MYTH_FACT,
-    Routes.CASES,
   ];
 
   setUp(() {
@@ -136,9 +134,10 @@ void main() {
       ) async {
         await mount(tester, width: width, dark: dark);
         expect(tester.takeException(), isNull);
-        expect(find.text('120'), findsOneWidget);
-        expect(find.text('1/3'), findsOneWidget);
+        expect(find.text('120'), findsNothing);
+        expect(find.text('1 dari 3 modul selesai'), findsOneWidget);
         expect(find.text('50%'), findsOneWidget);
+        expect(find.byTooltip('Notifikasi SIKERA'), findsNothing);
         await tester.drag(
           find.byType(SingleChildScrollView),
           const Offset(0, -1800),
@@ -146,6 +145,9 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         expect(find.text('Mood Diary'), findsNothing);
+        expect(find.text('Wawasan & Aktivitas'), findsNothing);
+        expect(find.text('Mitos vs Fakta Kaspro'), findsNothing);
+        expect(find.text('Poster & Studi Kasus'), findsNothing);
       });
     }
     testWidgets('Home supports enlarged text in ${dark ? 'dark' : 'light'}', (
@@ -199,7 +201,7 @@ void main() {
       expect(find.text('Menjaga Kesehatan Reproduksi'), findsOneWidget);
       await tapVisible(
         tester,
-        find.byTooltip('Buka Menjaga Kesehatan Reproduksi'),
+        find.widgetWithText(ElevatedButton, 'Mulai Belajar'),
       );
       expect(Get.arguments, 3);
       Get.back();
@@ -208,7 +210,7 @@ void main() {
       expect(find.text('50%'), findsOneWidget);
       await tapVisible(
         tester,
-        find.widgetWithText(TextButton, 'Lanjutkan Belajar'),
+        find.widgetWithText(ElevatedButton, 'Lanjutkan Belajar'),
       );
       expect(Get.arguments, 2);
       Get.back();
@@ -222,16 +224,12 @@ void main() {
     },
   );
 
-  testWidgets('All service and insight actions retain their routes', (
-    tester,
-  ) async {
+  testWidgets('All service actions retain their routes', (tester) async {
     await mount(tester);
     final destinations = {
       'Catat Haid': Routes.SELFCARE_PERIOD,
       'Kuis Trivia': Routes.TRIVIA,
       'Siklus & IMT': Routes.SELFCARE,
-      'Mitos vs Fakta Kaspro': Routes.MYTH_FACT,
-      'Poster & Studi Kasus': Routes.CASES,
     };
     for (final entry in destinations.entries) {
       await tapVisible(tester, find.text(entry.key));
@@ -245,13 +243,6 @@ void main() {
     expect(navigation.currentIndex.value, 2);
     await tapVisible(tester, find.byTooltip('Buka profil'));
     expect(navigation.currentIndex.value, 3);
-    await tapVisible(tester, find.byTooltip('Notifikasi SIKERA'));
-    expect(
-      find.text('Seluruh materi dan layanan konseling siap diakses.'),
-      findsOneWidget,
-    );
-    Get.closeAllSnackbars();
-    await tester.pumpAndSettle();
   });
 
   testWidgets('Error retry and empty modules have working recovery actions', (
@@ -274,7 +265,11 @@ void main() {
       modules: [_module(1, 'Materi selesai', 100)],
     );
     await mount(tester);
-    expect(find.text('1/1'), findsOneWidget);
+    expect(find.text('1 dari 1 modul selesai'), findsOneWidget);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Baca Ulang Materi'),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('learning-banner')), findsOneWidget);
     await tester.drag(find.byType(SingleChildScrollView), const Offset(0, 400));
     await tester.pumpAndSettle();
@@ -284,7 +279,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     controller.isLoading.value = false;
     await tester.pumpAndSettle();
-    expect(find.text('1/1'), findsOneWidget);
+    expect(find.text('1 dari 1 modul selesai'), findsOneWidget);
   });
 
   testWidgets('Header action is keyboard accessible', (tester) async {
@@ -309,13 +304,6 @@ void main() {
       }
       for (final dark in [false, true]) {
         await mount(tester, height: 1400, dark: dark);
-        await tester.runAsync(() async {
-          await precacheImage(
-            const AssetImage('assets/banner/banner.png'),
-            captureKey.currentContext!,
-          );
-        });
-        await tester.pumpAndSettle();
         final boundary =
             captureKey.currentContext!.findRenderObject()!
                 as RenderRepaintBoundary;

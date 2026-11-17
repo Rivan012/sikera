@@ -6,13 +6,6 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// Widget serbaguna untuk menampilkan banner modul edukasi SIKERA.
-/// Mendukung:
-/// - Format SVG dinamis dari API backend via [SvgPicture.string] dengan in-memory cache
-/// - Format raster (PNG, JPG, WebP) via [Image.network]
-/// - Resolusi otomatis URL endpoint API (`/api/v1/modules/{id}/banner.svg`)
-/// - Resolusi otomatis URL relatif backend (`/images/banners/...`)
-/// - Fallback estetik dengan aset lokal & gradien bertema jika gambar offline/null
 class ModuleBanner extends StatefulWidget {
   final String? bannerImage;
   final int moduleNumber;
@@ -21,6 +14,7 @@ class ModuleBanner extends StatefulWidget {
   final double? width;
   final BorderRadius? borderRadius;
   final BoxFit fit;
+  final bool useModuleFallback;
   final Widget? overlay;
   final Key? bannerKey;
 
@@ -33,6 +27,7 @@ class ModuleBanner extends StatefulWidget {
     this.width,
     this.borderRadius,
     this.fit = BoxFit.cover,
+    this.useModuleFallback = false,
     this.overlay,
     this.bannerKey,
   });
@@ -93,7 +88,10 @@ class _ModuleBannerState extends State<ModuleBanner> {
   }
 
   Future<void> _loadBanner() async {
-    final url = ModuleBanner.resolveUrl(widget.bannerImage, widget.moduleNumber);
+    final url = ModuleBanner.resolveUrl(
+      widget.bannerImage,
+      widget.moduleNumber,
+    );
     _activeUrl = url;
 
     // 1. Cek memory cache untuk SVG yang sudah pernah di-fetch
@@ -195,12 +193,12 @@ class _ModuleBannerState extends State<ModuleBanner> {
         height: widget.height,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
-          return _buildShimmerOrPlaceholder(context);
+          return _buildLoadingPlaceholder(context);
         },
         errorBuilder: (context, error, stackTrace) => _buildFallback(context),
       );
     } else if (_isLoading && !_hasError) {
-      imageWidget = _buildShimmerOrPlaceholder(context);
+      imageWidget = _buildLoadingPlaceholder(context);
     } else {
       imageWidget = _buildFallback(context);
     }
@@ -213,31 +211,29 @@ class _ModuleBannerState extends State<ModuleBanner> {
         height: widget.height,
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? AppTheme.surfaceDark
-              : AppTheme.primary900,
+              ? AppTheme.softAccentSurfaceDark
+              : AppTheme.primary50,
           borderRadius: effectiveRadius,
         ),
         child: Stack(
           fit: StackFit.expand,
-          children: [
-            imageWidget,
-            ?widget.overlay,
-          ],
+          children: [imageWidget, ?widget.overlay],
         ),
       ),
     );
   }
 
-  Widget _buildShimmerOrPlaceholder(BuildContext context) {
+  Widget _buildLoadingPlaceholder(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+      color: isDark ? AppTheme.surfaceDark : AppTheme.backgroundLight,
       child: Center(
         child: SizedBox(
           width: 24,
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2,
+            semanticsLabel: 'Memuat gambar materi',
             valueColor: AlwaysStoppedAnimation<Color>(
               isDark ? AppTheme.primary500 : AppTheme.primary700,
             ),
@@ -248,97 +244,50 @@ class _ModuleBannerState extends State<ModuleBanner> {
   }
 
   Widget _buildFallback(BuildContext context) {
+    if (widget.useModuleFallback) return _buildModuleFallback(context);
     return Image.asset(
       'assets/banner/banner.png',
       fit: widget.fit,
       errorBuilder: (context, error, stackTrace) =>
-          _buildGradientFallback(context),
+          _buildModuleFallback(context),
     );
   }
 
-  Widget _buildGradientFallback(BuildContext context) {
+  Widget _buildModuleFallback(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Menentukan tema palet berdasarkan nomor modul
-    final List<Color> colors;
-    switch (widget.moduleNumber % 4) {
-      case 1:
-        colors = isDark
-            ? const [Color(0xFF0F766E), Color(0xFF042F2E)]
-            : const [Color(0xFF0D9488), Color(0xFF115E59)];
-        break;
-      case 2:
-        colors = isDark
-            ? const [Color(0xFF1D4ED8), Color(0xFF1E1B4B)]
-            : const [Color(0xFF2563EB), Color(0xFF1E40AF)];
-        break;
-      case 3:
-        colors = isDark
-            ? const [Color(0xFFB45309), Color(0xFF451A03)]
-            : const [Color(0xFFD97706), Color(0xFF92400E)];
-        break;
-      default:
-        colors = isDark
-            ? const [Color(0xFFBE123C), Color(0xFF4C0519)]
-            : const [Color(0xFFE11D48), Color(0xFF9F1239)];
-    }
-
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
+      color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
       padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'MODUL ${widget.moduleNumber}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                if (widget.title != null && widget.title!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.title!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ],
+          Text(
+            'Modul ${widget.moduleNumber}',
+            style: TextStyle(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.menu_book_rounded,
-            size: 40,
-            color: Colors.white.withValues(alpha: 0.35),
-          ),
+          if (widget.title != null && widget.title!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              widget.title!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDark
+                    ? AppTheme.textPrimaryDark
+                    : AppTheme.textPrimaryLight,
+                fontSize: 16,
+                height: 1.3,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -44,18 +44,10 @@ class GamificationController extends GetxController {
         triviaQuestion.value = TriviaQuestionModel.fromJson(target);
       }
     } else {
-      // Fallback kuis jika API belum terisi data
-      triviaQuestion.value = TriviaQuestionModel(
-        id: 1,
-        question: 'Berapa rata-rata rentang siklus menstruasi yang normal pada remaja perempuan?',
-        options: [
-          '21 hingga 35 hari',
-          '10 hingga 15 hari',
-          '45 hingga 60 hari',
-          'Selalu tepat 30 hari',
-        ],
-        explanation: 'Siklus menstruasi normal berkisar antara 21 sampai 35 hari, dengan rata-rata 28 hari.',
-      );
+      if (triviaQuestion.value == null) {
+        errorMessage.value =
+            response.message ?? 'Gagal memuat soal trivia harian.';
+      }
     }
   }
 
@@ -83,6 +75,7 @@ class GamificationController extends GetxController {
     if (mythFactCard.value == null || forceRefresh) {
       isLoading.value = true;
     }
+    errorMessage.value = '';
     mythFactExplanation.value = null;
 
     final response = await ApiService.get(ApiConstants.mythFact);
@@ -98,13 +91,10 @@ class GamificationController extends GetxController {
         mythFactCard.value = MythFactCardModel.fromJson(target);
       }
     } else {
-      mythFactCard.value = MythFactCardModel(
-        id: 1,
-        statement: 'Minum air dingin saat menstruasi dapat membekukan darah haid di dalam rahim.',
-        category: 'Mitos Haid',
-        correctAnswer: 'myth',
-        explanation: 'MITOS! Saluran pencernaan dan rahim adalah dua organ yang terpisah. Suhu air minum tidak memengaruhi pembekuan darah dalam rongga rahim.',
-      );
+      if (mythFactCard.value == null) {
+        errorMessage.value =
+            response.message ?? 'Gagal memuat kartu mitos vs fakta.';
+      }
     }
   }
 

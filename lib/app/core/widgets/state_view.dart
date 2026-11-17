@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 class StateView extends StatelessWidget {
   final bool isLoading;
+  final String loadingMessage;
   final String? errorMessage;
   final bool isEmpty;
   final String emptyMessage;
@@ -13,6 +13,7 @@ class StateView extends StatelessWidget {
   const StateView({
     super.key,
     required this.isLoading,
+    this.loadingMessage = 'Memuat data...',
     this.errorMessage,
     this.isEmpty = false,
     this.emptyMessage = 'Belum ada data tersedia.',
@@ -24,11 +25,19 @@ class StateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: CircularProgressIndicator(
-            color: AppTheme.primary,
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+                semanticsLabel: loadingMessage,
+              ),
+              const SizedBox(height: 16),
+              Text(loadingMessage, textAlign: TextAlign.center),
+            ],
           ),
         ),
       );
@@ -36,44 +45,49 @@ class StateView extends StatelessWidget {
 
     if (errorMessage != null && errorMessage!.isNotEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: AppTheme.error,
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Terjadi Kendala',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 14,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                  size: 48,
                 ),
-              ),
-              if (onRetry != null) ...[
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Coba Lagi'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(140, 44),
+                const SizedBox(height: 16),
+                Text(
+                  'Terjadi Kendala',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
+                ),
+                if (onRetry != null) ...[
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Coba Lagi'),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(140, 44),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );
@@ -81,37 +95,42 @@ class StateView extends StatelessWidget {
 
     if (isEmpty) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                emptyIcon,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                size: 48,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                emptyMessage,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 14,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  emptyIcon,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 48,
                 ),
-              ),
-              if (onRetry != null) ...[
                 const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Muat Ulang'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(140, 44),
+                Text(
+                  emptyMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
                   ),
                 ),
+                if (onRetry != null) ...[
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Muat Ulang'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(140, 44),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );

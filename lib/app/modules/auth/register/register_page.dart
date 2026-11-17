@@ -1,24 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../legal/widgets/legal_links.dart';
 import 'register_controller.dart';
 
-/// Halaman Pendaftaran Akun Mahasiswa.
-/// Menerapkan antislop-layoutmobile dan flutter-build-responsive-layout:
-/// - Responsive constraint (maxWidth: 540px).
-/// - Tap target minimum 50px untuk tombol dan input field.
-/// - Validasi input yang jelas dan pesan error yang ter-sanitasi.
 class RegisterPage extends GetView<RegisterController> {
   const RegisterPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pendaftaran Mahasiswa'),
         leading: IconButton(
+          tooltip: 'Kembali',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
@@ -27,236 +26,342 @@ class RegisterPage extends GetView<RegisterController> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 540),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 18.0),
-              child: Container(
-                padding: const EdgeInsets.all(22.0),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                    width: 1.2,
-                  ),
-                  boxShadow: isDark ? null : AppTheme.cardShadow,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Section 1: Data Pribadi
-                    Row(
-                      children: [
-                        Icon(Icons.person_outline_rounded, size: 20, color: isDark ? AppTheme.primary500 : AppTheme.primary700),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Data Pribadi Mahasiswa',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
-                          ),
+            child: Obx(() {
+              final loading = controller.isLoading.value;
+              final error = controller.errorMessage.value;
+              return SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                child: AutofillGroup(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Data Pribadi Mahasiswa',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? AppTheme.textPrimaryDark
+                              : AppTheme.primary900,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller.nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        prefixIcon: Icon(Icons.person_outline),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controller.initialsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Inisial (Opsional)',
-                              hintText: 'Contoh: AP',
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: controller.usiaController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Usia (Tahun)',
-                              hintText: '20',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Jenis Kelamin:',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-name',
+                        label: 'Nama Lengkap',
+                        hint: 'Nama sesuai KTM',
+                        controller: controller.nameController,
+                        loading: loading,
+                        textInputAction: TextInputAction.next,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Obx(() => Row(
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-initials',
+                        label: 'Inisial (Opsional)',
+                        hint: 'Contoh: AP',
+                        controller: controller.initialsController,
+                        loading: loading,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-age',
+                        label: 'Usia (Tahun)',
+                        hint: 'Contoh: 20',
+                        controller: controller.usiaController,
+                        loading: loading,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Jenis Kelamin',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      RadioGroup<String>(
+                        groupValue: controller.selectedGender.value,
+                        onChanged: (val) {
+                          if (val != null && !loading) {
+                            controller.selectedGender.value = val;
+                          }
+                        },
+                        child: Column(
                           children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Perempuan', style: TextStyle(fontSize: 13.5)),
-                                value: 'P',
-                                activeColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                                groupValue: controller.selectedGender.value,
-                                onChanged: (val) {
-                                  if (val != null) controller.selectedGender.value = val;
-                                },
-                                contentPadding: EdgeInsets.zero,
-                              ),
+                            RadioListTile<String>(
+                              title: const Text('Perempuan'),
+                              value: 'P',
+                              enabled: !loading,
+                              activeColor: isDark
+                                  ? AppTheme.primary500
+                                  : AppTheme.primary700,
+                              contentPadding: EdgeInsets.zero,
                             ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: const Text('Laki-laki', style: TextStyle(fontSize: 13.5)),
-                                value: 'L',
-                                activeColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                                groupValue: controller.selectedGender.value,
-                                onChanged: (val) {
-                                  if (val != null) controller.selectedGender.value = val;
-                                },
-                                contentPadding: EdgeInsets.zero,
-                              ),
+                            RadioListTile<String>(
+                              title: const Text('Laki-laki'),
+                              value: 'L',
+                              enabled: !loading,
+                              activeColor: isDark
+                                  ? AppTheme.primary500
+                                  : AppTheme.primary700,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ],
-                        )),
-                    const SizedBox(height: 10),
-                    Obx(() => DropdownButtonFormField<String>(
-                          value: controller.selectedAgama.value,
-                          decoration: const InputDecoration(
-                            labelText: 'Agama',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Agama',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        itemHeight: null,
+                        initialValue: controller.selectedAgama.value,
+                        items: controller.agamaList
+                            .map(
+                              (a) => DropdownMenuItem(value: a, child: Text(a)),
+                            )
+                            .toList(),
+                        onChanged: loading
+                            ? null
+                            : (val) {
+                                if (val != null) {
+                                  controller.selectedAgama.value = val;
+                                }
+                              },
+                      ),
+                      const SizedBox(height: 28),
+                      const Divider(height: 1),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Informasi Akademik & Akun',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? AppTheme.textPrimaryDark
+                              : AppTheme.primary900,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-nim',
+                        label: 'Nomor Induk Mahasiswa (NIM)',
+                        hint: 'Masukkan NIM',
+                        controller: controller.nimController,
+                        loading: loading,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-program',
+                        label: 'Program Studi',
+                        hint: 'Contoh: Sistem Informasi',
+                        controller: controller.prodiController,
+                        loading: loading,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-faculty',
+                        label: 'Fakultas',
+                        hint: 'Contoh: Teknik',
+                        controller: controller.fakultasController,
+                        loading: loading,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      _field(
+                        context,
+                        key: 'register-email',
+                        label: 'Email Aktif',
+                        hint: 'nama@kampus.ac.id',
+                        controller: controller.emailController,
+                        loading: loading,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Kata Sandi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const ValueKey('register-password'),
+                        controller: controller.passwordController,
+                        obscureText: controller.isPasswordHidden.value,
+                        readOnly: loading,
+                        textInputAction: TextInputAction.next,
+                        onChanged: (_) => controller.errorMessage.value = '',
+                        decoration: InputDecoration(
+                          hintText: 'Minimal 6 karakter',
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMd,
+                            ),
+                            borderSide: BorderSide(color: colors.outline),
                           ),
-                          items: controller.agamaList
-                              .map((a) => DropdownMenuItem(value: a, child: Text(a)))
-                              .toList(),
-                          onChanged: (val) {
-                            if (val != null) controller.selectedAgama.value = val;
-                          },
-                        )),
-                    const SizedBox(height: 24),
-                    const Divider(height: 1),
-                    const SizedBox(height: 20),
-
-                    // Section 2: Data Akademik & Akun
-                    Row(
-                      children: [
-                        Icon(Icons.school_outlined, size: 20, color: isDark ? AppTheme.primary500 : AppTheme.primary700),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Informasi Akademik & Akun',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                            color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                          suffixIcon: IconButton(
+                            tooltip: controller.isPasswordHidden.value
+                                ? 'Tampilkan kata sandi'
+                                : 'Sembunyikan kata sandi',
+                            icon: Icon(
+                              controller.isPasswordHidden.value
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                            onPressed: controller.togglePasswordVisibility,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Konfirmasi Kata Sandi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const ValueKey('register-password-confirm'),
+                        controller: controller.passwordConfirmController,
+                        obscureText: controller.isPasswordHidden.value,
+                        readOnly: loading,
+                        textInputAction: TextInputAction.done,
+                        onChanged: (_) => controller.errorMessage.value = '',
+                        onSubmitted: (_) {
+                          if (!controller.isLoading.value) {
+                            controller.register();
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Ulangi kata sandi',
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusMd,
+                            ),
+                            borderSide: BorderSide(color: colors.outline),
+                          ),
+                        ),
+                      ),
+                      if (error.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            error,
+                            style: TextStyle(
+                              color: colors.error,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: controller.nimController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nomor Induk Mahasiswa (NIM)',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: controller.prodiController,
-                      decoration: const InputDecoration(
-                        labelText: 'Program Studi',
-                        prefixIcon: Icon(Icons.school_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: controller.fakultasController,
-                      decoration: const InputDecoration(
-                        labelText: 'Fakultas',
-                        prefixIcon: Icon(Icons.account_balance_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: controller.emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Aktif',
-                        prefixIcon: Icon(Icons.email_outlined),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Obx(() => TextField(
-                          controller: controller.passwordController,
-                          obscureText: controller.isPasswordHidden.value,
-                          decoration: InputDecoration(
-                            labelText: 'Kata Sandi',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                controller.isPasswordHidden.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
+                      const SizedBox(height: 24),
+                      const LegalLinks(),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          disabledBackgroundColor: colors.surfaceContainerHigh,
+                          disabledForegroundColor: colors.onSurface,
+                          minimumSize: const Size(double.infinity, 48),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
+                        onPressed: loading ? null : controller.register,
+                        child: loading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  semanticsLabel: 'Mendaftarkan akun...',
+                                  color: colors.onSurface,
+                                ),
+                              )
+                            : const Text(
+                                'Daftar Akun Sekarang',
+                                textAlign: TextAlign.center,
                               ),
-                              onPressed: controller.togglePasswordVisibility,
-                            ),
-                          ),
-                        )),
-                    const SizedBox(height: 12),
-                    Obx(() => TextField(
-                          controller: controller.passwordConfirmController,
-                          obscureText: controller.isPasswordHidden.value,
-                          decoration: const InputDecoration(
-                            labelText: 'Konfirmasi Kata Sandi',
-                            prefixIcon: Icon(Icons.lock_reset_outlined),
-                          ),
-                        )),
-                    const SizedBox(height: 26),
-
-                    // Submit Button
-                    Obx(() => SizedBox(
-                          height: 48,
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            onPressed: controller.isLoading.value ? null : controller.register,
-                            child: controller.isLoading.value
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Daftar Akun Sekarang',
-                                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                                  ),
-                          ),
-                        )),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    BuildContext context, {
+    required String key,
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    required bool loading,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    TextInputAction? textInputAction,
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Semantics(
+          label: label,
+          child: TextField(
+            key: ValueKey(key),
+            controller: controller,
+            keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
+            textInputAction: textInputAction,
+            readOnly: loading,
+            onChanged: (_) => this.controller.errorMessage.value = '',
+            decoration: InputDecoration(
+              hintText: hint,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                borderSide: BorderSide(color: colors.outline),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }

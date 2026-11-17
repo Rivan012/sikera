@@ -208,27 +208,16 @@ class _TopicVideoPlayerState extends State<TopicVideoPlayer> {
           // Bottom Action Footer
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Wrap(
+              alignment: WrapAlignment.end,
               children: [
-                Flexible(
-                  child: Text(
-                    'ID: $_cleanVideoId',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      color: isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
                 TextButton.icon(
                   onPressed: _openExternalYouTube,
                   icon: const Icon(Icons.open_in_new_rounded, size: 14),
                   label: const Text('Buka di YouTube', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                   style: TextButton.styleFrom(
                     foregroundColor: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                    visualDensity: VisualDensity.compact,
+                    minimumSize: const Size(48, 48),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   ),
                 ),
@@ -241,9 +230,7 @@ class _TopicVideoPlayerState extends State<TopicVideoPlayer> {
   }
 
   Widget _buildErrorOrFallback(BuildContext context, bool isDark) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
+    return Container(
         color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -267,15 +254,14 @@ class _TopicVideoPlayerState extends State<TopicVideoPlayer> {
               icon: const Icon(Icons.play_arrow_rounded, size: 16),
               label: const Text('Tonton di YouTube', style: TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF0000),
+                backgroundColor: const Color(0xFFC53030),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                minimumSize: const Size(0, 34),
+                minimumSize: const Size(48, 48),
               ),
             ),
           ],
         ),
-      ),
     );
   }
 }

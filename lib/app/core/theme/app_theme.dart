@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 
-/// SIKERA Design System Theme
-/// Berdasarkan spesifikasi DESIGN.md dan aturan antislop (ENERGY 2 / RHYTHM 2 / MOTION 1):
-/// - Identitas: Deep Navy (#03045E), Ocean Blue (#0077B6), Cyan (#00B4D8), Light Cyan (#90E0EF), Pale Cyan (#CAF0F8)
-/// - Kontras WCAG AA terpenuhi di kedua mode (terang dan gelap)
-/// - Komponen konsisten (radius 8, 12, 16, 20, 24; tap target min 44px)
 class AppTheme {
   AppTheme._();
 
   // Core Brand Palette (DESIGN.md Section 3)
-  static const Color primary900 = Color(0xFF03045E); // Deep Navy - Highest emphasis, nav, headings
-  static const Color primary700 = Color(0xFF0077B6); // Ocean Blue - Primary action, buttons, links
-  static const Color primary500 = Color(0xFF00B4D8); // Cyan - Accent, icons, highlights, progress
-  static const Color primary200 = Color(0xFF90E0EF); // Light Cyan - Soft accent, selected surfaces
-  static const Color primary50 = Color(0xFFCAF0F8);  // Pale Cyan - Very light background, cards, info
+  static const Color primary900 = Color(
+    0xFF03045E,
+  ); // Deep Navy - Highest emphasis, nav, headings
+  static const Color primary700 = Color(
+    0xFF0077B6,
+  ); // Ocean Blue - Primary action, buttons, links
+  static const Color primary500 = Color(
+    0xFF00B4D8,
+  ); // Cyan - Accent, icons, highlights, progress
+  static const Color primary200 = Color(
+    0xFF90E0EF,
+  ); // Light Cyan - Soft accent, selected surfaces
+  static const Color primary50 = Color(
+    0xFFCAF0F8,
+  ); // Pale Cyan - Very light background, cards, info
 
   // Backwards compatibility aliases
   static const Color primaryTeal = primary900;
@@ -41,7 +46,7 @@ class AppTheme {
   static const Color softSurfaceLight = Color(0xFFCAF0F8);
   static const Color textPrimaryLight = Color(0xFF03045E);
   static const Color textSecondaryLight = Color(0xFF334E68);
-  static const Color textMutedLight = Color(0xFF627D98);
+  static const Color textMutedLight = Color(0xFF526D82);
   static const Color borderLight = Color(0xFFD6EAF0);
   static const Color strongBorderLight = Color(0xFF90E0EF);
 
@@ -81,11 +86,11 @@ class AppTheme {
   ];
 
   // Official Radius Tokens (DESIGN.md Section 9)
-  static const double radiusSm = 8.0;     // Small controls
-  static const double radiusMd = 12.0;    // Inputs, compact cards, buttons
-  static const double radiusLg = 16.0;    // Standard cards
-  static const double radiusXl = 20.0;    // Feature cards, banners
-  static const double radius2Xl = 24.0;   // Hero surfaces
+  static const double radiusSm = 8.0; // Small controls
+  static const double radiusMd = 12.0; // Inputs, compact cards, buttons
+  static const double radiusLg = 16.0; // Standard cards
+  static const double radiusXl = 20.0; // Feature cards, banners
+  static const double radius2Xl = 24.0; // Hero surfaces
   static const double radiusPill = 999.0; // Pills & status tags
 
   // Backwards-compatibility aliases for existing assertions
@@ -101,17 +106,43 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: 'Roboto',
       primaryColor: primary700,
       scaffoldBackgroundColor: backgroundLight,
       colorScheme: const ColorScheme.light(
         primary: primary700,
+        primaryContainer: primary50,
+        onPrimaryContainer: textPrimaryLight,
         secondary: primary500,
+        secondaryContainer: primary50,
+        onSecondaryContainer: textPrimaryLight,
+        tertiary: primary900,
+        onTertiary: Colors.white,
+        tertiaryContainer: primary50,
+        onTertiaryContainer: textPrimaryLight,
         surface: surfaceLight,
+        surfaceContainerLowest: surfaceLight,
+        surfaceContainerLow: backgroundLight,
+        surfaceContainer: backgroundLight,
+        surfaceContainerHigh: pocketSurfaceLight,
+        surfaceContainerHighest: primary50,
+        surfaceTint: Colors.transparent,
         error: error,
+        errorContainer: errorLight,
+        onErrorContainer: error,
         onPrimary: Colors.white,
-        onSecondary: Colors.white,
+        onSecondary: primary900,
         onSurface: textPrimaryLight,
+        onSurfaceVariant: textSecondaryLight,
+        outline: textMutedLight,
+        outlineVariant: borderLight,
         onError: Colors.white,
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          foregroundColor: primary700,
+        ),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: surfaceLight,
@@ -122,6 +153,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: textPrimaryLight),
         titleTextStyle: TextStyle(
           color: textPrimaryLight,
+          fontFamily: 'Roboto',
           fontSize: 18,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
@@ -139,7 +171,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceLight,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: borderLight, width: 1.0),
@@ -169,6 +204,7 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontSize: 15,
+            fontFamily: 'Roboto',
             fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
@@ -186,6 +222,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
+            fontFamily: 'Roboto',
           ),
         ),
       ),
@@ -215,17 +252,43 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: 'Roboto',
       primaryColor: primary500,
       scaffoldBackgroundColor: backgroundDark,
       colorScheme: const ColorScheme.dark(
         primary: primary500,
+        primaryContainer: softAccentSurfaceDark,
+        onPrimaryContainer: textPrimaryDark,
         secondary: primary700,
+        secondaryContainer: softAccentSurfaceDark,
+        onSecondaryContainer: textPrimaryDark,
+        tertiary: primary200,
+        onTertiary: primary900,
+        tertiaryContainer: elevatedSurfaceDark,
+        onTertiaryContainer: textPrimaryDark,
         surface: surfaceDark,
-        error: error,
-        onPrimary: Colors.white,
+        surfaceContainerLowest: backgroundDark,
+        surfaceContainerLow: surfaceDark,
+        surfaceContainer: surfaceDark,
+        surfaceContainerHigh: elevatedSurfaceDark,
+        surfaceContainerHighest: softAccentSurfaceDark,
+        surfaceTint: Colors.transparent,
+        error: Color(0xFFFFB4AB),
+        errorContainer: Color(0xFF4C252B),
+        onErrorContainer: Color(0xFFFFB4AB),
+        onPrimary: primary900,
         onSecondary: Colors.white,
         onSurface: textPrimaryDark,
-        onError: Colors.white,
+        onSurfaceVariant: textSecondaryDark,
+        outline: textMutedDark,
+        outlineVariant: borderDark,
+        onError: Color(0xFF690005),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(44, 44),
+          foregroundColor: primary500,
+        ),
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: surfaceDark,
@@ -236,6 +299,7 @@ class AppTheme {
         iconTheme: IconThemeData(color: textPrimaryDark),
         titleTextStyle: TextStyle(
           color: textPrimaryDark,
+          fontFamily: 'Roboto',
           fontSize: 18,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.3,
@@ -253,7 +317,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceDark,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: borderDark, width: 1.0),
@@ -268,7 +335,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusMd),
-          borderSide: const BorderSide(color: error, width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFFFFB4AB), width: 1.0),
         ),
         labelStyle: const TextStyle(color: textSecondaryDark, fontSize: 14),
         hintStyle: const TextStyle(color: textMutedDark, fontSize: 14),
@@ -283,6 +350,7 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontSize: 15,
+            fontFamily: 'Roboto',
             fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
@@ -300,6 +368,7 @@ class AppTheme {
           textStyle: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
+            fontFamily: 'Roboto',
           ),
         ),
       ),

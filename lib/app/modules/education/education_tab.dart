@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_view.dart';
 import '../../data/models/dashboard_model.dart';
@@ -7,14 +8,10 @@ import '../../routes/app_pages.dart';
 import 'education_controller.dart';
 import 'widgets/module_banner.dart';
 
-/// Tab Edukasi: daftar modul pembelajaran kesehatan reproduksi mahasiswa.
-/// Mengikuti skill antislop-layoutmobile dan flutter-build-responsive-layout:
-/// - Responsive constraint (maxWidth: 720px) agar adaptif di smartphone maupun tablet/desktop.
-/// - Tap target minimum 48px pada setiap kartu modul.
-/// - Visual hierarchy yang jelas: Header ringkasan progres keseluruhan + daftar modul interaktif.
-/// - 3-State UI lengkap (Loading, Empty, Error) dengan tombol refresh.
 class EducationTab extends GetView<EducationController> {
-  const EducationTab({super.key});
+  const EducationTab({super.key, this.standalone = false});
+
+  final bool standalone;
 
   @override
   Widget build(BuildContext context) {
@@ -22,22 +19,28 @@ class EducationTab extends GetView<EducationController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modul Edukasi'),
-        automaticallyImplyLeading: false,
+        title: const Text('Materi'),
+        automaticallyImplyLeading: standalone,
       ),
       body: Obx(() {
         final modules = controller.modules;
-        final totalModules = modules.length;
-        final completedModules = modules.where((m) => m.progressPercentage >= 100).length;
-        final int overallProgress = totalModules > 0
-            ? (modules.fold<int>(0, (sum, m) => sum + m.progressPercentage) / totalModules).round()
-            : 0;
+        final completed = modules
+            .where((m) => m.progressPercentage >= 100)
+            .length;
+        final progress = modules.isEmpty
+            ? 0
+            : (modules.fold<int>(0, (sum, m) => sum + m.progressPercentage) /
+                      modules.length)
+                  .round();
 
         return StateView(
           isLoading: controller.isLoading.value,
-          errorMessage: controller.errorMessage.value.isNotEmpty ? controller.errorMessage.value : null,
+          loadingMessage: 'Memuat materi edukasi...',
+          errorMessage: controller.errorMessage.value.isNotEmpty
+              ? controller.errorMessage.value
+              : null,
           isEmpty: modules.isEmpty,
-          emptyMessage: 'Belum ada modul edukasi yang tersedia.',
+          emptyMessage: 'Belum ada materi yang tersedia.',
           emptyIcon: Icons.menu_book_outlined,
           onRetry: controller.fetchModules,
           child: RefreshIndicator(
@@ -48,49 +51,68 @@ class EducationTab extends GetView<EducationController> {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
                   children: [
-                    // Ringkasan Progres Belajar Keseluruhan
-                    _buildOverallProgressCard(
-                      context,
-                      totalModules: totalModules,
-                      completedModules: completedModules,
-                      overallProgress: overallProgress,
-                      isDark: isDark,
+                    _progressSummary(
+                      completed,
+                      modules.length,
+                      progress,
+                      isDark,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Judul Bagian
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Pilih materi',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppTheme.textPrimaryDark
+                                  : AppTheme.primary900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${modules.length} modul',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark
+                                ? AppTheme.textSecondaryDark
+                                : AppTheme.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Material(
+                      color: isDark
+                          ? AppTheme.surfaceDark
+                          : AppTheme.surfaceLight,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Daftar Materi Modul',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.2,
-                              color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
-                            ),
-                          ),
-                          Text(
-                            '$totalModules Modul Tersedia',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                            ),
-                          ),
+                          for (
+                            var index = 0;
+                            index < modules.length;
+                            index++
+                          ) ...[
+                            if (index > 0)
+                              Divider(
+                                height: 1,
+                                color: isDark
+                                    ? AppTheme.borderDark
+                                    : AppTheme.borderLight,
+                              ),
+                            _moduleRow(modules[index], isDark),
+                          ],
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-
-                    // List Kartu Modul
-                    ...modules.map((module) => _buildModuleCard(context, module, isDark)),
-                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -101,79 +123,60 @@ class EducationTab extends GetView<EducationController> {
     );
   }
 
-  /// Kartu ringkasan progres belajar keseluruhan
-  Widget _buildOverallProgressCard(
-    BuildContext context, {
-    required int totalModules,
-    required int completedModules,
-    required int overallProgress,
-    required bool isDark,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppTheme.brandGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: isDark ? null : AppTheme.elevatedCardShadow,
-      ),
+  Widget _progressSummary(int completed, int total, int progress, bool isDark) {
+    final textColor = isDark
+        ? AppTheme.textPrimaryDark
+        : AppTheme.textPrimaryLight;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Kemajuan belajar',
+            style: TextStyle(
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.school_rounded, color: AppTheme.primary50, size: 22),
-                  SizedBox(width: 8),
-                  Text(
-                    'Kemajuan Belajar Anda',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              Expanded(
                 child: Text(
-                  '$overallProgress%',
-                  style: const TextStyle(
-                    color: AppTheme.primary900,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
+                  '$completed dari $total modul selesai',
+                  style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                '$progress%',
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            completedModules == totalModules && totalModules > 0
-                ? 'Luar biasa! Seluruh modul telah berhasil Anda selesaikan.'
-                : 'Telah menyelesaikan $completedModules dari $totalModules modul kesehatan reproduksi.',
-            style: const TextStyle(
-              color: AppTheme.primary50,
-              fontSize: 13,
-              height: 1.4,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
-              value: overallProgress > 0 ? (overallProgress / 100).clamp(0.0, 1.0) : 0.0,
-              backgroundColor: Colors.white.withValues(alpha: 0.22),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary500),
-              minHeight: 8,
+              value: (progress / 100).clamp(0.0, 1.0),
+              minHeight: 5,
+              backgroundColor: isDark
+                  ? AppTheme.borderDark
+                  : AppTheme.borderLight,
+              valueColor: AlwaysStoppedAnimation(
+                isDark ? AppTheme.primary500 : AppTheme.primary700,
+              ),
+              semanticsLabel: 'Rata-rata kemajuan belajar',
+              semanticsValue: '$progress%',
             ),
           ),
         ],
@@ -181,191 +184,152 @@ class EducationTab extends GetView<EducationController> {
     );
   }
 
-  /// Kartu per modul edukasi
-  Widget _buildModuleCard(BuildContext context, DashboardModuleModel module, bool isDark) {
-    final bool isCompleted = module.progressPercentage >= 100;
-    final bool isInProgress = module.progressPercentage > 0 && !isCompleted;
+  Widget _moduleRow(DashboardModuleModel module, bool isDark) {
+    final progress = module.progressPercentage.clamp(0, 100);
+    final completed = progress == 100;
+    final started = progress > 0 && !completed;
+    final status = completed
+        ? 'Selesai'
+        : started
+        ? 'Sedang dipelajari'
+        : 'Belum dimulai';
+    final action = completed
+        ? 'Baca lagi'
+        : started
+        ? 'Lanjutkan'
+        : 'Buka materi';
+    final secondaryColor = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondaryLight;
+    final statusColor = completed
+        ? (isDark ? const Color(0xFF4ADE80) : AppTheme.success)
+        : secondaryColor;
 
-    Color statusBgColor;
-    Color statusTextColor;
-    String statusText;
-    IconData statusIcon;
-
-    if (isCompleted) {
-      statusBgColor = isDark ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.successLight;
-      statusTextColor = isDark ? const Color(0xFF34D399) : AppTheme.success;
-      statusText = 'Selesai';
-      statusIcon = Icons.check_circle_rounded;
-    } else if (isInProgress) {
-      statusBgColor = isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50;
-      statusTextColor = isDark ? AppTheme.primary500 : AppTheme.primary700;
-      statusText = '${module.progressPercentage}% Dipelajari';
-      statusIcon = Icons.timelapse_rounded;
-    } else {
-      statusBgColor = isDark ? const Color(0xFF243038) : const Color(0xFFF1F5F9);
-      statusTextColor = isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight;
-      statusText = 'Belum Dimulai';
-      statusIcon = Icons.play_circle_outline_rounded;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(
-          color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-          width: 1.0,
-        ),
-        boxShadow: isDark ? null : AppTheme.cardShadow,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          onTap: () {
-            controller.fetchModuleDetail(module.id);
-            Get.toNamed(Routes.EDUCATION_MODULE_DETAIL, arguments: module.id)?.then((_) {
-              controller.fetchModules(forceRefresh: true);
-            });
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Banner Visual Modul
-              ModuleBanner(
-                bannerImage: module.bannerImage,
-                moduleNumber: module.moduleNumber,
-                title: module.title,
-                height: 125,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                // Top Row: Modul Number + Status Chip
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                        borderRadius: BorderRadius.circular(12),
+    return Semantics(
+      button: true,
+      child: InkWell(
+        key: ValueKey('education-module-${module.id}'),
+        focusColor: (isDark ? AppTheme.primary200 : AppTheme.primary700)
+            .withValues(alpha: 0.16),
+        onTap: () {
+          controller.fetchModuleDetail(module.id);
+          Get.toNamed(
+            Routes.EDUCATION_MODULE_DETAIL,
+            arguments: module.id,
+          )?.then((_) {
+            controller.fetchModules(forceRefresh: true);
+          });
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final showBanner =
+                  constraints.maxWidth >= 560 &&
+                  MediaQuery.textScalerOf(context).scale(14) <= 20 &&
+                  module.bannerImage?.trim().isNotEmpty == true;
+              final content = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Modul ${module.moduleNumber}',
+                    style: TextStyle(
+                      color: secondaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    module.title,
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.textPrimaryDark
+                          : AppTheme.primary900,
+                      fontSize: 18,
+                      height: 1.3,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    '${module.completedTopics} dari ${module.totalTopics} submateri',
+                    style: TextStyle(
+                      color: secondaryColor,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (started) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress / 100,
+                        minHeight: 4,
+                        backgroundColor: isDark
+                            ? AppTheme.borderDark
+                            : AppTheme.borderLight,
+                        valueColor: AlwaysStoppedAnimation(
+                          isDark ? AppTheme.primary500 : AppTheme.primary700,
+                        ),
+                        semanticsLabel: 'Kemajuan ${module.title}',
+                        semanticsValue: '$progress%',
                       ),
-                      child: Text(
-                        'MODUL ${module.moduleNumber}',
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      Text(
+                        status,
                         style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? AppTheme.primary500 : AppTheme.primary900,
-                          fontSize: 11.5,
-                          letterSpacing: 0.5,
+                          color: statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: statusBgColor,
-                        borderRadius: BorderRadius.circular(12),
+                      Text(
+                        action,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.primary200
+                              : AppTheme.primary700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(statusIcon, size: 14, color: statusTextColor),
-                          const SizedBox(width: 5),
-                          Text(
-                            statusText,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: statusTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Title
-                Text(
-                  module.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                    color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                // Progress Bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: module.progressPercentage > 0 ? (module.progressPercentage / 100).clamp(0.0, 1.0) : 0.0,
-                    backgroundColor: isDark ? const Color(0xFF2C3840) : const Color(0xFFF1F5F9),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isCompleted ? AppTheme.success : (isDark ? AppTheme.primary500 : AppTheme.primary700),
+                ],
+              );
+              if (!showBanner) return content;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: content),
+                  const SizedBox(width: 24),
+                  ExcludeSemantics(
+                    child: ModuleBanner(
+                      bannerImage: module.bannerImage,
+                      moduleNumber: module.moduleNumber,
+                      width: 160,
+                      height: 90,
+                      fit: BoxFit.contain,
+                      useModuleFallback: true,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                     ),
-                    minHeight: 6,
                   ),
-                ),
-                const SizedBox(height: 12),
-
-                // Footer Row: Topic Count & Action Button
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.menu_book_rounded,
-                          size: 16,
-                          color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${module.completedTopics} dari ${module.totalTopics} Submateri',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          isCompleted ? 'Review Modul' : (isInProgress ? 'Lanjutkan' : 'Buka Modul'),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: isDark ? AppTheme.primary500 : AppTheme.primary700,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              );
+            },
           ),
-        ],
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
 }

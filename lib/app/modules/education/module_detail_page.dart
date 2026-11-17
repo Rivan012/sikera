@@ -73,7 +73,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Header Banner Modul
-                            _buildModuleHeader(context, module, isDark),
+                            _buildModuleHeader(module, isDark),
                             const SizedBox(height: 20),
 
                             // Alur Belajar: Langkah 1 - Pre-Test
@@ -109,148 +109,104 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
   }
 
   Widget _buildStepLabel(String stepNumber, String title, bool isDark) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(
-            color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            stepNumber.toUpperCase(),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: isDark ? AppTheme.primary500 : AppTheme.primary900,
-              letterSpacing: 0.4,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-              color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
-            ),
-          ),
-        ),
-      ],
+    return Text(
+      '$stepNumber · $title',
+      style: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
+      ),
     );
   }
 
-  Widget _buildModuleHeader(BuildContext context, ModuleDetailModel module, bool isDark) {
-    final completedCount = module.topics.where((TopicModel t) => t.isCompleted == true).length;
+  Widget _buildModuleHeader(ModuleDetailModel module, bool isDark) {
+    final completedCount = module.topics
+        .where((TopicModel t) => t.isCompleted == true)
+        .length;
     final totalCount = module.topics.length;
     final bool isFinished = module.hasPosttest;
+    final statusColor = isDark ? const Color(0xFF34D399) : AppTheme.success;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Banner Visual Modul (Mendukung SVG/Gambar dari Backend)
-        ModuleBanner(
-          bannerImage: module.bannerImage,
-          moduleNumber: module.moduleNumber,
-          title: module.title,
-          height: 165,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        const SizedBox(height: 12),
-
-        // Info & Progress Modul
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: AppTheme.brandGradient,
+        Semantics(
+          label: 'Modul ${module.moduleNumber}: ${module.title}',
+          image: true,
+          excludeSemantics: true,
+          child: ModuleBanner(
+            bannerImage: module.bannerImage,
+            moduleNumber: module.moduleNumber,
+            title: module.title,
+            useModuleFallback: true,
+            height: 165,
             borderRadius: BorderRadius.circular(20),
-            boxShadow: isDark ? null : AppTheme.elevatedCardShadow,
           ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 16, 4, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'MODUL ${module.moduleNumber}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  if (isFinished)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.success,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 14),
-                          SizedBox(width: 4),
-                          Text(
-                            'MODUL SELESAI',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                module.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              if (module.description != null && module.description!.isNotEmpty) ...[
-                const SizedBox(height: 8),
+              if (module.description != null &&
+                  module.description!.isNotEmpty) ...[
                 Text(
                   module.description!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.45,
-                    color: AppTheme.primary50,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondaryLight,
                   ),
                 ),
+                const SizedBox(height: 12),
               ],
-              const SizedBox(height: 14),
               Row(
                 children: [
-                  const Icon(Icons.assignment_turned_in_rounded, size: 16, color: AppTheme.primary50),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$completedCount dari $totalCount Submateri Tuntas',
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primary50,
+                  Icon(
+                    Icons.assignment_turned_in_rounded,
+                    size: 18,
+                    color: isDark ? AppTheme.primary500 : AppTheme.primary700,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '$completedCount dari $totalCount submateri tuntas',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppTheme.textPrimaryDark
+                            : AppTheme.primary900,
+                      ),
                     ),
                   ),
                 ],
               ),
+              if (isFinished) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 18,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Modul selesai',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -319,30 +275,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
               ),
             ),
             const SizedBox(width: 10),
-            if (hasPretest)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.successLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Selesai',
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF34D399) : AppTheme.success,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              )
-            else
+            if (!hasPretest)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary700,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(90, 42),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  minimumSize: const Size(92, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  ),
                 ),
                 onPressed: () {
                   controller.fetchPretest(module.id);
@@ -475,27 +417,22 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                           Row(
                             children: [
                               if (topic.hasVideo) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  margin: const EdgeInsets.only(right: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF0000).withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.play_circle_filled_rounded, size: 10, color: Color(0xFFFF0000)),
-                                      SizedBox(width: 3),
-                                      Text(
-                                        'VIDEO',
-                                        style: TextStyle(
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFFFF0000),
-                                        ),
-                                      ),
-                                    ],
+                                Icon(
+                                  Icons.play_circle_outline_rounded,
+                                  size: 14,
+                                  color: isDark
+                                      ? AppTheme.primary200
+                                      : AppTheme.primary700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Video · ',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? AppTheme.primary200
+                                        : AppTheme.primary700,
                                   ),
                                 ),
                               ],
@@ -608,30 +545,16 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
               ),
             ),
             const SizedBox(width: 10),
-            if (hasPosttest)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.successLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Selesai',
-                  style: TextStyle(
-                    color: isDark ? const Color(0xFF34D399) : AppTheme.success,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              )
-            else if (allTopicsDone)
+            if (!hasPosttest && allTopicsDone)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary700,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(90, 42),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  minimumSize: const Size(92, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  ),
                 ),
                 onPressed: () {
                   controller.fetchPosttest(module.id);
@@ -641,7 +564,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                 },
                 child: const Text('Mulai', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               )
-            else
+            else if (!hasPosttest)
               Icon(Icons.lock_rounded, color: isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight, size: 20),
           ],
         ),

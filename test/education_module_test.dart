@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sikera/app/core/constants/api_constants.dart';
 import 'package:sikera/app/data/models/module_model.dart';
 import 'package:sikera/app/modules/education/widgets/module_banner.dart';
 import 'package:sikera/app/modules/education/widgets/topic_video_player.dart';
@@ -12,14 +13,18 @@ void main() {
 
     test('Extracts from standard watch URL', () {
       expect(
-        TopicVideoPlayer.extractVideoId('https://www.youtube.com/watch?v=v3F4QW_h32M'),
+        TopicVideoPlayer.extractVideoId(
+          'https://www.youtube.com/watch?v=v3F4QW_h32M',
+        ),
         'v3F4QW_h32M',
       );
     });
 
     test('Extracts from watch URL with extra parameters', () {
       expect(
-        TopicVideoPlayer.extractVideoId('https://www.youtube.com/watch?v=v3F4QW_h32M&feature=shared&t=10s'),
+        TopicVideoPlayer.extractVideoId(
+          'https://www.youtube.com/watch?v=v3F4QW_h32M&feature=shared&t=10s',
+        ),
         'v3F4QW_h32M',
       );
     });
@@ -33,7 +38,9 @@ void main() {
 
     test('Extracts from embed URL', () {
       expect(
-        TopicVideoPlayer.extractVideoId('https://www.youtube.com/embed/v3F4QW_h32M'),
+        TopicVideoPlayer.extractVideoId(
+          'https://www.youtube.com/embed/v3F4QW_h32M',
+        ),
         'v3F4QW_h32M',
       );
     });
@@ -51,13 +58,19 @@ void main() {
         'https://example.com/images/banner.png',
       );
       expect(
-        ModuleBanner.resolveUrl('http://127.0.0.1:8000/api/v1/modules/1/banner.svg', 1),
+        ModuleBanner.resolveUrl(
+          'http://127.0.0.1:8000/api/v1/modules/1/banner.svg',
+          1,
+        ),
         'http://127.0.0.1:8000/api/v1/modules/1/banner.svg',
       );
     });
 
     test('Resolves relative paths with server base URL', () {
-      final resolved = ModuleBanner.resolveUrl('/images/banners/banner-module-1.svg', 1);
+      final resolved = ModuleBanner.resolveUrl(
+        '/images/banners/banner-module-1.svg',
+        1,
+      );
       expect(resolved, isNotNull);
       expect(resolved.endsWith('/images/banners/banner-module-1.svg'), isTrue);
       expect(resolved.contains('/api/v1'), isFalse);
@@ -66,15 +79,15 @@ void main() {
     test('Defaults to API endpoint banner for null and empty inputs', () {
       expect(
         ModuleBanner.resolveUrl(null, 1),
-        'http://127.0.0.1:8000/api/v1/modules/1/banner.svg',
+        '${ApiConstants.baseUrl}/modules/1/banner.svg',
       );
       expect(
         ModuleBanner.resolveUrl('', 2),
-        'http://127.0.0.1:8000/api/v1/modules/2/banner.svg',
+        '${ApiConstants.baseUrl}/modules/2/banner.svg',
       );
       expect(
         ModuleBanner.resolveUrl('   ', 3),
-        'http://127.0.0.1:8000/api/v1/modules/3/banner.svg',
+        '${ApiConstants.baseUrl}/modules/3/banner.svg',
       );
     });
   });
@@ -102,7 +115,9 @@ void main() {
   });
 
   group('ModuleBanner Widget Tests', () {
-    testWidgets('Renders ModuleBanner with asset fallback and overlay', (tester) async {
+    testWidgets('Renders ModuleBanner with asset fallback and overlay', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

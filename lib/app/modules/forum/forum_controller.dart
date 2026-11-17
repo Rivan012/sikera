@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/community_model.dart';
 
 class ForumController extends GetxController {
@@ -132,7 +133,7 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Judul pertanyaan wajib diisi.',
-        backgroundColor: Colors.amber.shade800,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -142,7 +143,7 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Uraian pertanyaan minimal 10 karakter.',
-        backgroundColor: Colors.amber.shade800,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -156,6 +157,7 @@ class ForumController extends GetxController {
         'title': title,
         'topic': topic,
         'content': content,
+        'is_anonymous': isAnonymous.value,
       },
     );
 
@@ -167,7 +169,7 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Pertanyaan Anda telah diajukan secara aman.',
-        backgroundColor: const Color(0xFF16803C),
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
       );
       fetchForumPosts(forceRefresh: true);
@@ -175,7 +177,7 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Gagal Mengirim',
         response.message ?? 'Terjadi kendala saat mengirim.',
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppTheme.error,
         colorText: Colors.white,
       );
     }
@@ -189,7 +191,7 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Isi balasan minimal 3 karakter.',
-        backgroundColor: Colors.amber.shade800,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -213,14 +215,14 @@ class ForumController extends GetxController {
       Get.snackbar(
         'Terkirim',
         'Tanggapan Anda telah ditambahkan.',
-        backgroundColor: const Color(0xFF16803C),
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
       );
     } else {
       Get.snackbar(
         'Gagal Mengirim',
         response.message ?? 'Terjadi kendala saat mengirim balasan.',
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppTheme.error,
         colorText: Colors.white,
       );
     }

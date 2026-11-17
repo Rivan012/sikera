@@ -106,25 +106,43 @@ class PosterListPage extends GetView<PostersController> {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Icon(Icons.file_download_outlined, size: 14, color: AppTheme.primary700),
+                                            Icon(
+                                              Icons.file_download_outlined,
+                                              size: 14,
+                                              color: isDark
+                                                  ? AppTheme.primary200
+                                                  : AppTheme.primary700,
+                                            ),
                                             const SizedBox(width: 4),
                                             Text(
                                               '${poster.downloadCount} Unduhan',
                                               style: TextStyle(
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w500,
-                                                color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF64748B),
+                                                color: isDark
+                                                    ? AppTheme.textSecondaryDark
+                                                    : AppTheme
+                                                          .textSecondaryLight,
                                               ),
                                             ),
                                             const SizedBox(width: 14),
-                                            const Icon(Icons.share_outlined, size: 14, color: AppTheme.primary500),
+                                            Icon(
+                                              Icons.share_outlined,
+                                              size: 14,
+                                              color: isDark
+                                                  ? AppTheme.primary200
+                                                  : AppTheme.primary700,
+                                            ),
                                             const SizedBox(width: 4),
                                             Text(
                                               '${poster.shareCount} Bagikan',
                                               style: TextStyle(
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w500,
-                                                color: isDark ? AppTheme.textSecondaryDark : const Color(0xFF64748B),
+                                                color: isDark
+                                                    ? AppTheme.textSecondaryDark
+                                                    : AppTheme
+                                                          .textSecondaryLight,
                                               ),
                                             ),
                                           ],
@@ -132,7 +150,6 @@ class PosterListPage extends GetView<PostersController> {
                                       ],
                                     ),
                                   ),
-                                  const Icon(Icons.arrow_forward_rounded, size: 16, color: AppTheme.primary700),
                                 ],
                               ),
                             ),

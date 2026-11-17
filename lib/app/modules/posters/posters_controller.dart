@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/community_model.dart';
 
 class PostersController extends GetxController {
@@ -57,7 +58,7 @@ class PostersController extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Unduhan poster telah dicatat dalam sistem.',
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
       );
     }
@@ -69,7 +70,7 @@ class PostersController extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Terima kasih telah menyebarkan edukasi kesehatan reproduksi.',
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
       );
     }

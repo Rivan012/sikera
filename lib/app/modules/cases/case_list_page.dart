@@ -105,20 +105,15 @@ class CaseListPage extends GetView<CasesController> {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  const Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        'Baca Analisis Kasus',
-                                        style: TextStyle(
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppTheme.primary700,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.arrow_forward_rounded, size: 14, color: AppTheme.primary700),
-                                    ],
+                                  Text(
+                                    'Baca Analisis Kasus',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: isDark
+                                          ? AppTheme.primary200
+                                          : AppTheme.primary700,
+                                    ),
                                   ),
                                 ],
                               ),

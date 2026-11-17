@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../core/services/storage_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../routes/app_pages.dart';
 
 /// Splash Screen SIKERA.
-/// Menampilkan logo dan tagline selama 2 detik sebelum navigasi otomatis
-/// ke halaman Login atau Home berdasarkan status autentikasi.
+/// Menampilkan logo sebelum onboarding, login, atau sesi pengguna yang aktif.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -13,7 +14,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeIn;
   late final Animation<double> _scaleIn;
@@ -46,7 +48,13 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
 
-    final destination = StorageService.hasToken ? Routes.HOME : Routes.LOGIN;
+    final destination = StorageService.hasToken
+        ? (StorageService.termsPrivacyAccepted
+              ? Routes.HOME
+              : Routes.TERMS_PRIVACY_CONSENT)
+        : StorageService.onboardingCompleted
+        ? Routes.LOGIN
+        : Routes.ONBOARDING;
     Get.offAllNamed(destination);
   }
 
@@ -58,51 +66,64 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF03045E), // Deep Navy
-              Color(0xFF0077B6), // Ocean Blue
-              Color(0xFF00B4D8), // Cyan
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: FadeTransition(
-              opacity: _fadeIn,
-              child: ScaleTransition(
-                scale: _scaleIn,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Logo
-                    Image.asset(
-                      'assets/logo/sikera_logo_putih.png',
-                      width: 200,
-                      height: 200,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 24),
-                    // Tagline
-                    const Text(
-                      'Sistem Informasi\nKesehatan Remaja',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white70,
-                        letterSpacing: 0.5,
-                        height: 1.4,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
+    final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.primary900;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: bgColor,
+        systemNavigationBarIconBrightness: isDark
+            ? Brightness.light
+            : Brightness.dark,
+      ),
+      child: Scaffold(
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(color: bgColor),
+          child: SafeArea(
+            child: Center(
+              child: FadeTransition(
+                opacity: _fadeIn,
+                child: ScaleTransition(
+                  scale: _scaleIn,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo
+                      Container(
+                        width: 148,
+                        height: 148,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary900,
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radius2Xl,
+                          ),
+                        ),
+                        child: Image.asset(
+                          'assets/logo/sikera_logo_putih.png',
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+                      // Tagline
+                      Text(
+                        'Sistem Informasi\nKesehatan Remaja',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -6,6 +6,10 @@ abstract class Routes {
   Routes._();
   static const HOME = _Paths.HOME;
   static const SPLASH = _Paths.SPLASH;
+  static const ONBOARDING = _Paths.ONBOARDING;
+  static const TERMS_OF_SERVICE = _Paths.TERMS_OF_SERVICE;
+  static const PRIVACY_POLICY = _Paths.PRIVACY_POLICY;
+  static const TERMS_PRIVACY_CONSENT = _Paths.TERMS_PRIVACY_CONSENT;
   static const LOGIN = _Paths.LOGIN;
   static const REGISTER = _Paths.REGISTER;
   static const EDUCATION_MODULE_LIST = _Paths.EDUCATION_MODULE_LIST;
@@ -34,6 +38,10 @@ abstract class _Paths {
   _Paths._();
   static const HOME = '/home';
   static const SPLASH = '/splash';
+  static const ONBOARDING = '/onboarding';
+  static const TERMS_OF_SERVICE = '/terms-of-service';
+  static const PRIVACY_POLICY = '/privacy-policy';
+  static const TERMS_PRIVACY_CONSENT = '/terms-privacy-consent';
   static const LOGIN = '/login';
   static const REGISTER = '/register';
   static const EDUCATION_MODULE_LIST = '/education';

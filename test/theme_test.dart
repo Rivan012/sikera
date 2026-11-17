@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sikera/app/core/theme/app_theme.dart';
 
+double _contrast(Color foreground, Color background) {
+  final first = foreground.computeLuminance();
+  final second = background.computeLuminance();
+  final lighter = first > second ? first : second;
+  final darker = first > second ? second : first;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 void main() {
   group('SIKERA Design System Tokens', () {
     test('Official brand color hex values match DESIGN.md', () {
@@ -44,10 +52,56 @@ void main() {
       expect(dark.colorScheme.primary, AppTheme.primary500);
     });
 
+    test('Color scheme foregrounds meet text contrast in both themes', () {
+      for (final entry in {
+        'light': AppTheme.lightTheme,
+        'dark': AppTheme.darkTheme,
+      }.entries) {
+        final colors = entry.value.colorScheme;
+        final pairs = [
+          ('primary', colors.onPrimary, colors.primary),
+          ('secondary', colors.onSecondary, colors.secondary),
+          ('tertiary', colors.onTertiary, colors.tertiary),
+          (
+            'primaryContainer',
+            colors.onPrimaryContainer,
+            colors.primaryContainer,
+          ),
+          (
+            'secondaryContainer',
+            colors.onSecondaryContainer,
+            colors.secondaryContainer,
+          ),
+          (
+            'tertiaryContainer',
+            colors.onTertiaryContainer,
+            colors.tertiaryContainer,
+          ),
+          ('error', colors.onError, colors.error),
+          ('errorContainer', colors.onErrorContainer, colors.errorContainer),
+          ('surface', colors.onSurface, colors.surface),
+        ];
+        for (final (name, foreground, background) in pairs) {
+          expect(
+            _contrast(foreground, background),
+            greaterThanOrEqualTo(4.5),
+            reason: '${entry.key} $name must support normal text',
+          );
+        }
+      }
+      expect(
+        _contrast(AppTheme.textMutedLight, AppTheme.backgroundLight),
+        greaterThanOrEqualTo(4.5),
+        reason: 'Light muted text must remain readable on the page background',
+      );
+    });
+
     test('Button themes enforce minimum 44px tap targets and 12px radius', () {
       final light = AppTheme.lightTheme;
-      final elevatedMinSize = light.elevatedButtonTheme.style?.minimumSize?.resolve({});
-      final outlinedMinSize = light.outlinedButtonTheme.style?.minimumSize?.resolve({});
+      final elevatedMinSize = light.elevatedButtonTheme.style?.minimumSize
+          ?.resolve({});
+      final outlinedMinSize = light.outlinedButtonTheme.style?.minimumSize
+          ?.resolve({});
 
       expect(elevatedMinSize?.height, greaterThanOrEqualTo(44.0));
       expect(outlinedMinSize?.height, greaterThanOrEqualTo(44.0));

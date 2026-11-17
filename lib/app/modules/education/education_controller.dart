@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/models/dashboard_model.dart';
 import '../../data/models/module_model.dart';
 import '../../routes/app_pages.dart';
@@ -112,7 +113,7 @@ class EducationController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Harap jawab seluruh pertanyaan sebelum mengumpulkan.',
-        backgroundColor: Colors.amber.shade700,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -135,7 +136,7 @@ class EducationController extends GetxController {
       Get.snackbar(
         'Pre-Test Selesai!',
         'Akses materi modul berhasil dibuka. Silakan pelajari submateri berikut.',
-        backgroundColor: const Color(0xFF0F766E),
+        backgroundColor: AppTheme.success,
         colorText: Colors.white,
         icon: const Icon(Icons.check_circle_outline, color: Colors.white),
         snackPosition: SnackPosition.BOTTOM,
@@ -147,7 +148,7 @@ class EducationController extends GetxController {
       Get.snackbar(
         'Gagal Submit',
         response.message ?? 'Terjadi kesalahan saat mengumpulkan pre-test.',
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppTheme.error,
         colorText: Colors.white,
       );
     }
@@ -195,7 +196,7 @@ class EducationController extends GetxController {
       Get.snackbar(
         'Perhatian',
         'Harap jawab seluruh pertanyaan sebelum mengumpulkan.',
-        backgroundColor: Colors.amber.shade700,
+        backgroundColor: AppTheme.warning,
         colorText: Colors.white,
       );
       return;
@@ -222,7 +223,7 @@ class EducationController extends GetxController {
       Get.snackbar(
         'Gagal Submit',
         response.message ?? 'Terjadi kesalahan saat mengumpulkan post-test.',
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppTheme.error,
         colorText: Colors.white,
       );
     }

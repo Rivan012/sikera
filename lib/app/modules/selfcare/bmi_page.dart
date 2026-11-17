@@ -120,17 +120,23 @@ class BmiPage extends GetView<SelfcareController> {
                   if (result == null) return const SizedBox.shrink();
 
                   final category = result.category ?? 'Normal';
-                  Color badgeColor = Colors.teal.shade700;
-                  Color badgeBg = Colors.teal.withValues(alpha: 0.15);
+                  Color badgeColor = isDark
+                      ? const Color(0xFF4ADE80)
+                      : AppTheme.statusSuccess;
+                  Color badgeBg = AppTheme.statusSuccess.withValues(alpha: 0.15);
 
                   final lowerCat = category.toLowerCase();
                   if (lowerCat.contains('kurang')) {
-                    badgeColor = Colors.amber.shade900;
-                    badgeBg = Colors.amber.withValues(alpha: 0.18);
+                    badgeColor = isDark
+                        ? const Color(0xFFFBBF24)
+                        : AppTheme.statusWarning;
+                    badgeBg = AppTheme.statusWarning.withValues(alpha: 0.15);
                   } else if (lowerCat.contains('lebih') ||
                       lowerCat.contains('overweight') ||
                       lowerCat.contains('obes')) {
-                    badgeColor = AppTheme.statusError;
+                    badgeColor = isDark
+                        ? const Color(0xFFF87171)
+                        : AppTheme.statusError;
                     badgeBg = AppTheme.statusError.withValues(alpha: 0.15);
                   }
 
@@ -138,7 +144,7 @@ class BmiPage extends GetView<SelfcareController> {
                     padding: const EdgeInsets.all(20.0),
                     decoration: BoxDecoration(
                       color: isDark ? AppTheme.surfaceDark : Colors.white,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                       border: Border.all(
                         color: isDark
                             ? AppTheme.borderDark
@@ -309,7 +315,9 @@ class BmiPage extends GetView<SelfcareController> {
                         '${controller.bmiHistory.length} Catatan',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: isDark
+                              ? AppTheme.textSecondaryDark
+                              : AppTheme.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -330,6 +338,44 @@ class BmiPage extends GetView<SelfcareController> {
                     );
                   }
 
+                  if (controller.bmiHistoryError.value.isNotEmpty &&
+                      controller.bmiHistory.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppTheme.surfaceDark
+                            : AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        border: Border.all(
+                          color: isDark
+                              ? AppTheme.borderDark
+                              : AppTheme.borderLight,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            controller.bmiHistoryError.value,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppTheme.textSecondaryDark
+                                  : AppTheme.textSecondaryLight,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: controller.fetchBmiHistory,
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   final history = controller.bmiHistory;
                   if (history.isEmpty) {
                     return Container(
@@ -338,7 +384,7 @@ class BmiPage extends GetView<SelfcareController> {
                         color: isDark
                             ? AppTheme.surfaceDark
                             : AppTheme.surfaceLight,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
                         border: Border.all(
                           color: isDark
                               ? AppTheme.borderDark
@@ -351,14 +397,18 @@ class BmiPage extends GetView<SelfcareController> {
                             Icon(
                               Icons.monitor_weight_outlined,
                               size: 40,
-                              color: Colors.grey.shade400,
+                              color: isDark
+                                  ? AppTheme.textMutedDark
+                                  : AppTheme.textMutedLight,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Belum ada riwayat pengukuran IMT.',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey.shade600,
+                                color: isDark
+                                    ? AppTheme.textSecondaryDark
+                                    : AppTheme.textSecondaryLight,
                               ),
                             ),
                           ],
@@ -393,17 +443,19 @@ class BmiPage extends GetView<SelfcareController> {
     bool isDark,
   ) {
     final cat = item.category ?? 'Normal';
-    Color catColor = Colors.teal.shade700;
-    Color catBg = Colors.teal.withValues(alpha: 0.15);
+    Color catColor = isDark
+        ? const Color(0xFF4ADE80)
+        : AppTheme.statusSuccess;
+    Color catBg = AppTheme.statusSuccess.withValues(alpha: 0.15);
 
     final lower = cat.toLowerCase();
     if (lower.contains('kurang')) {
-      catColor = Colors.amber.shade900;
-      catBg = Colors.amber.withValues(alpha: 0.18);
+      catColor = isDark ? const Color(0xFFFBBF24) : AppTheme.statusWarning;
+      catBg = AppTheme.statusWarning.withValues(alpha: 0.15);
     } else if (lower.contains('lebih') ||
         lower.contains('overweight') ||
         lower.contains('obes')) {
-      catColor = AppTheme.statusError;
+      catColor = isDark ? const Color(0xFFF87171) : AppTheme.statusError;
       catBg = AppTheme.statusError.withValues(alpha: 0.15);
     }
 
@@ -411,7 +463,7 @@ class BmiPage extends GetView<SelfcareController> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
         border: Border.all(
           color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
         ),
@@ -439,7 +491,7 @@ class BmiPage extends GetView<SelfcareController> {
                     ),
                     decoration: BoxDecoration(
                       color: catBg,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                     ),
                     child: Text(
                       cat,
@@ -455,7 +507,12 @@ class BmiPage extends GetView<SelfcareController> {
               if (item.createdAt != null)
                 Text(
                   item.createdAt!.split('T').first,
-                  style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDark
+                        ? AppTheme.textSecondaryDark
+                        : AppTheme.textSecondaryLight,
+                  ),
                 ),
             ],
           ),

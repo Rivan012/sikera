@@ -245,49 +245,39 @@ class ForumListPage extends GetView<ForumController> {
   Widget _buildFilterChips(BuildContext context, bool isDark) {
     final filterOptions = ['Semua', ...controller.topics];
 
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: filterOptions.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final option = filterOptions[index];
-          final isSelected = controller.selectedFilterTopic.value == option;
-
-          return GestureDetector(
-            onTap: () => controller.selectedFilterTopic.value = option,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? (isDark ? AppTheme.primary500 : AppTheme.primary700)
-                    : (isDark ? AppTheme.surfaceDark : Colors.white),
-                borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
-                border: Border.all(
-                  color: isSelected
-                      ? (isDark ? AppTheme.primary500 : AppTheme.primary700)
-                      : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-                  width: 1.2,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  option == 'Semua' ? 'Semua Topik' : ForumController.topicShortLabel(option),
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight),
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: filterOptions.map((option) {
+        final isSelected = controller.selectedFilterTopic.value == option;
+        return ChoiceChip(
+          label: Text(
+            option == 'Semua'
+                ? 'Semua Topik'
+                : ForumController.topicShortLabel(option),
+          ),
+          selected: isSelected,
+          selectedColor: isDark ? AppTheme.primary200 : AppTheme.primary700,
+          backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+          checkmarkColor: isDark ? AppTheme.primary900 : Colors.white,
+          side: BorderSide(
+            color: isSelected
+                ? (isDark ? AppTheme.primary200 : AppTheme.primary700)
+                : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
+            width: 1.2,
+          ),
+          labelStyle: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected
+                ? (isDark ? AppTheme.primary900 : Colors.white)
+                : (isDark
+                      ? AppTheme.textSecondaryDark
+                      : AppTheme.textSecondaryLight),
+          ),
+          onSelected: (_) => controller.selectedFilterTopic.value = option,
+        );
+      }).toList(),
     );
   }
 
@@ -388,9 +378,8 @@ class ForumListPage extends GetView<ForumController> {
                 ),
                 const SizedBox(height: 14),
 
-                // Bottom Bar: Counselor Status & Arrow
+                // Bottom Bar: Counselor Status
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -398,7 +387,7 @@ class ForumListPage extends GetView<ForumController> {
                         color: hasReplies || post.isAnsweredByCounselor
                             ? (isDark ? AppTheme.statusSuccess.withValues(alpha: 0.15) : AppTheme.successLight)
                             : (isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50),
-                        borderRadius: BorderRadius.circular(AppTheme.jagoPillRadius),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusPill),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -428,19 +417,6 @@ class ForumListPage extends GetView<ForumController> {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 15,
-                        color: isDark ? AppTheme.primary500 : AppTheme.primary700,
                       ),
                     ),
                   ],

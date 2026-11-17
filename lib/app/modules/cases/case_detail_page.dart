@@ -28,137 +28,182 @@ class CaseDetailPage extends GetView<CasesController> {
           onRetry: () => controller.fetchCaseDetail(caseId),
           child: item == null
               ? const SizedBox.shrink()
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          item.category.toUpperCase(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: isDark ? AppTheme.primary200 : AppTheme.primary700,
-                          ),
-                        ),
+              : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 16.0,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Deskripsi Kasus
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Kronologi / Situasi Kasus',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const Divider(height: 16),
-                              Text(
-                                item.content.isNotEmpty ? item.content : item.summary,
-                                style: const TextStyle(fontSize: 13, height: 1.5),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Tinjauan Medis
-                      if (item.medicalAspect != null && item.medicalAspect!.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.primary900.withValues(alpha: 0.35) : AppTheme.primary50,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                            border: Border.all(
-                              color: isDark ? AppTheme.primary700.withValues(alpha: 0.4) : AppTheme.primary200,
-                              width: 1.0,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            item.category,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppTheme.primary200
+                                  : AppTheme.primary700,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          const SizedBox(height: 6),
+                          Text(
+                            item.title,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Deskripsi Kasus
+                          Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.medical_services_outlined, color: isDark ? AppTheme.primary200 : AppTheme.primary700, size: 20),
-                                  const SizedBox(width: 8),
                                   Text(
-                                    'Tinjauan Medis & Kesehatan',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? AppTheme.primary200 : AppTheme.primary900,
+                                    'Kronologi / Situasi Kasus',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const Divider(height: 16),
+                                  Text(
+                                    item.content.isNotEmpty
+                                        ? item.content
+                                        : item.summary,
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      height: 1.5,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                item.medicalAspect!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // Tinjauan Hukum / UU TPKS
-                      if (item.legalAspect != null && item.legalAspect!.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.surfaceDark : AppTheme.backgroundLight,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                            border: Border.all(
-                              color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
-                              width: 1.0,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                          const SizedBox(height: 12),
+
+                          // Tinjauan Medis
+                          if (item.medicalAspect != null &&
+                              item.medicalAspect!.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppTheme.softAccentSurfaceDark
+                                    : AppTheme.primary50,
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusLg,
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.gavel_rounded, color: isDark ? AppTheme.primary500 : AppTheme.primary700, size: 20),
-                                  const SizedBox(width: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.medical_services_outlined,
+                                        color: isDark
+                                            ? AppTheme.primary200
+                                            : AppTheme.primary700,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Tinjauan Medis & Kesehatan',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark
+                                              ? AppTheme.primary200
+                                              : AppTheme.primary900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                   Text(
-                                    'Aspek Hukum (UU TPKS / Regulasi Kampus)',
+                                    item.medicalAspect!,
                                     style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimaryLight,
+                                      fontSize: 13.5,
+                                      height: 1.45,
+                                      color: isDark
+                                          ? AppTheme.textPrimaryDark
+                                          : AppTheme.primary900,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                item.legalAspect!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  height: 1.4,
-                                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // Tinjauan Hukum / UU TPKS
+                          if (item.legalAspect != null &&
+                              item.legalAspect!.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppTheme.surfaceDark
+                                    : AppTheme.backgroundLight,
+                                borderRadius: BorderRadius.circular(
+                                  AppTheme.radiusLg,
+                                ),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppTheme.borderDark
+                                      : AppTheme.borderLight,
+                                  width: 1.0,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.gavel_rounded,
+                                        color: isDark
+                                            ? AppTheme.primary200
+                                            : AppTheme.primary700,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Aspek Hukum (UU TPKS / Regulasi Kampus)',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark
+                                                ? AppTheme.textPrimaryDark
+                                                : AppTheme.textPrimaryLight,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    item.legalAspect!,
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      height: 1.45,
+                                      color: isDark
+                                          ? AppTheme.textSecondaryDark
+                                          : AppTheme.textSecondaryLight,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
         );
