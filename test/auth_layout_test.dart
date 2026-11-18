@@ -83,6 +83,10 @@ void main() {
         home: page,
         getPages: [
           GetPage(
+            name: Routes.LOGIN,
+            page: () => const Scaffold(body: Text('Login destination')),
+          ),
+          GetPage(
             name: Routes.REGISTER,
             page: () => const Scaffold(body: Text('Registration destination')),
           ),
@@ -349,8 +353,98 @@ void main() {
     });
   }
 
+  testWidgets('Login interactive controls: validation and legal links', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      const LoginPage(),
+      false,
+      width: 390,
+      height: 844,
+      textScale: 1,
+    );
+    final controller = Get.find<LoginController>();
+
+    // Empty submit shows inline validation message
+    await tapVisible(tester, find.byType(ElevatedButton));
+    Get.closeAllSnackbars();
+    await tester.pumpAndSettle();
+    expect(controller.errorMessage.value, contains('wajib diisi'));
+    expect(find.textContaining('wajib diisi'), findsOneWidget);
+
+    // Invalid email format shows inline format message
+    await tester.enterText(
+      find.byKey(const ValueKey('login-email')),
+      'tanpa-at',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('login-password')),
+      'rahasia123',
+    );
+    await tapVisible(tester, find.byType(ElevatedButton));
+    Get.closeAllSnackbars();
+    await tester.pumpAndSettle();
+    expect(controller.errorMessage.value, contains('Email belum valid'));
+
+    // Legal links navigate cleanly
+    await tapVisible(tester, find.text('Syarat & Ketentuan'));
+    expect(Get.currentRoute, Routes.TERMS_OF_SERVICE);
+    Get.back();
+    await tester.pumpAndSettle();
+
+    await tapVisible(tester, find.text('Kebijakan Privasi'));
+    expect(Get.currentRoute, Routes.PRIVACY_POLICY);
+    Get.back();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'Register interactive controls: dropdowns, validation, legal links, and back to login',
+    (tester) async {
+      await mount(
+        tester,
+        const RegisterPage(),
+        false,
+        width: 390,
+        height: 844,
+        textScale: 1,
+      );
+      final controller = Get.find<RegisterController>();
+
+      // Pendidikan Terakhir dropdown updates state
+      await tapVisible(tester, find.text('SMA/SMK/MA/Sederajat'));
+      await tester.tap(find.text('Sarjana (S1)').last);
+      await tester.pumpAndSettle();
+      expect(controller.selectedPendidikan.value, 'Sarjana (S1)');
+
+      // Empty submit shows inline error banner
+      await tapVisible(
+        tester,
+        find.widgetWithText(ElevatedButton, 'Daftar Akun Sekarang'),
+      );
+      Get.closeAllSnackbars();
+      await tester.pumpAndSettle();
+      expect(controller.errorMessage.value, contains('wajib diisi'));
+
+      // Legal links navigate cleanly
+      await tapVisible(tester, find.text('Syarat & Ketentuan'));
+      expect(Get.currentRoute, Routes.TERMS_OF_SERVICE);
+      Get.back();
+      await tester.pumpAndSettle();
+
+      // Secondary action returns to Login
+      await tapVisible(tester, find.text('Masuk ke Akun'));
+      expect(Get.currentRoute, Routes.LOGIN);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   if (Platform.environment['SIKERA_CAPTURE_LOGIN'] == '1') {
-    testWidgets('Capture initial login page for visual review', (tester) async {
+    testWidgets('Capture login and register pages for visual review', (
+      tester,
+    ) async {
       await (FontLoader(
         'MaterialIcons',
       )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
@@ -394,6 +488,32 @@ void main() {
             );
             final file = File(
               'build/login-review-${dark ? 'dark' : 'light'}-${layout.$1}.png',
+            );
+            await file.parent.create(recursive: true);
+            await file.writeAsBytes(bytes!.buffer.asUint8List());
+            image.dispose();
+          });
+          expect(tester.takeException(), isNull);
+
+          await mount(
+            tester,
+            const RegisterPage(),
+            dark,
+            width: layout.$2,
+            height: layout.$3,
+            textScale: 1,
+          );
+          await tester.pumpAndSettle();
+          final regBoundary =
+              captureKey.currentContext!.findRenderObject()!
+                  as RenderRepaintBoundary;
+          await tester.runAsync(() async {
+            final image = await regBoundary.toImage(pixelRatio: 2);
+            final bytes = await image.toByteData(
+              format: ui.ImageByteFormat.png,
+            );
+            final file = File(
+              'build/register-review-${dark ? 'dark' : 'light'}-${layout.$1}.png',
             );
             await file.parent.create(recursive: true);
             await file.writeAsBytes(bytes!.buffer.asUint8List());

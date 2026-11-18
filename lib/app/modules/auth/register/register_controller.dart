@@ -61,12 +61,41 @@ class RegisterController extends GetxController {
         nim.isEmpty ||
         prodi.isEmpty ||
         fakultas.isEmpty ||
-        usia == null) {
+        usia == null ||
+        usia <= 0) {
       const message =
           'Nama, Usia, NIM, Program Studi, Fakultas, Email, dan Kata Sandi wajib diisi.';
       errorMessage.value = message;
       Get.snackbar(
-        'Peringatan',
+        'Data Belum Lengkap',
+        message,
+        backgroundColor: AppTheme.warning,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    if (!email.contains('@') || email.startsWith('@') || email.endsWith('@')) {
+      const message = 'Email belum valid. Gunakan format nama@kampus.ac.id.';
+      errorMessage.value = message;
+      Get.snackbar(
+        'Format Email',
+        message,
+        backgroundColor: AppTheme.warning,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      const message = 'Kata sandi minimal terdiri dari 6 karakter.';
+      errorMessage.value = message;
+      Get.snackbar(
+        'Kata Sandi Terlalu Pendek',
         message,
         backgroundColor: AppTheme.warning,
         colorText: Colors.white,
@@ -77,10 +106,10 @@ class RegisterController extends GetxController {
     }
 
     if (password != passwordConfirm) {
-      const message = 'Konfirmasi kata sandi tidak cocok.';
+      const message = 'Konfirmasi kata sandi tidak cocok. Ketik ulang kata sandi yang sama.';
       errorMessage.value = message;
       Get.snackbar(
-        'Peringatan',
+        'Konfirmasi Tidak Cocok',
         message,
         backgroundColor: AppTheme.warning,
         colorText: Colors.white,
@@ -147,7 +176,7 @@ class RegisterController extends GetxController {
       } else if (errorText.contains('users.email') ||
           errorText.contains('Email ini sudah terdaftar')) {
         errorText =
-            'Email "$email" sudah terdaftar. Silakan gunakan menu Masuk/Login.';
+            'Email "$email" sudah terdaftar. Silakan gunakan halaman Masuk.';
       }
 
       errorMessage.value = errorText;

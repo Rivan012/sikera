@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -5,8 +6,8 @@ import '../../core/services/storage_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../routes/app_pages.dart';
 
-/// Splash Screen SIKERA.
-/// Menampilkan logo sebelum onboarding, login, atau sesi pengguna yang aktif.
+/// Halaman pembuka SIKERA sebelum mengarahkan pengguna ke onboarding,
+/// halaman masuk, persetujuan dokumen, atau beranda aktif.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -19,29 +20,42 @@ class _SplashPageState extends State<SplashPage>
   late final AnimationController _controller;
   late final Animation<double> _fadeIn;
   late final Animation<double> _scaleIn;
+  bool _motionConfigured = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 220),
     );
 
     _fadeIn = CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
+      curve: Curves.easeOutCubic,
     );
 
-    _scaleIn = Tween<double>(begin: 0.8, end: 1.0).animate(
+    _scaleIn = Tween<double>(begin: 0.96, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
+        curve: Curves.easeOutCubic,
       ),
     );
 
-    _controller.forward();
     _navigateAfterDelay();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_motionConfigured) {
+      _motionConfigured = true;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _controller.value = 1.0;
+      } else {
+        _controller.forward();
+      }
+    }
   }
 
   Future<void> _navigateAfterDelay() async {
@@ -69,6 +83,19 @@ class _SplashPageState extends State<SplashPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
     final textColor = isDark ? AppTheme.textPrimaryDark : AppTheme.primary900;
+    final secondaryColor = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondaryLight;
+    final accentColor = isDark ? AppTheme.primary500 : AppTheme.primary700;
+    final haloSurface = isDark
+        ? AppTheme.softAccentSurfaceDark
+        : AppTheme.primary50;
+    final haloBorder = isDark
+        ? AppTheme.borderDark
+        : AppTheme.strongBorderLight;
+    final emblemSurface = isDark
+        ? AppTheme.pocketSurfaceLight
+        : AppTheme.surfaceLight;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -86,46 +113,169 @@ class _SplashPageState extends State<SplashPage>
           height: double.infinity,
           decoration: BoxDecoration(color: bgColor),
           child: SafeArea(
-            child: Center(
-              child: FadeTransition(
-                opacity: _fadeIn,
-                child: ScaleTransition(
-                  scale: _scaleIn,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Logo
-                      Container(
-                        width: 148,
-                        height: 148,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary900,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radius2Xl,
-                          ),
-                        ),
-                        child: Image.asset(
-                          'assets/logo/sikera_logo_putih.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Tagline
-                      Text(
-                        'Sistem Informasi\nKesehatan Remaja',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: textColor,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxHeight < 620;
+                final emblemSize = math.min(
+                  compact ? 140.0 : 184.0,
+                  math.max(112.0, constraints.maxWidth * 0.48),
+                );
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: compact ? 16 : 28,
                   ),
-                ),
-              ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: math.max(
+                        0,
+                        constraints.maxHeight - (compact ? 32 : 56),
+                      ),
+                    ),
+                    child: FadeTransition(
+                      opacity: _fadeIn,
+                      child: ScaleTransition(
+                        scale: _scaleIn,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Edukasi & Kesehatan Kampus',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: secondaryColor,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  width: 28,
+                                  height: 3,
+                                  decoration: BoxDecoration(
+                                    color: accentColor,
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusPill,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: compact ? 20 : 32,
+                              ),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 340,
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: haloSurface,
+                                        borderRadius: BorderRadius.circular(30),
+                                        border: Border.all(
+                                          color: haloBorder,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Container(
+                                        width: emblemSize,
+                                        height: emblemSize,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: emblemSurface,
+                                          borderRadius: BorderRadius.circular(
+                                            AppTheme.radius2Xl,
+                                          ),
+                                          boxShadow: isDark
+                                              ? null
+                                              : AppTheme.cardShadow,
+                                        ),
+                                        child: Image.asset(
+                                          'assets/logo/sikera_logo_putih.png',
+                                          fit: BoxFit.contain,
+                                          semanticLabel: 'Logo SIKERA',
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(height: compact ? 20 : 28),
+                                    Text(
+                                      'Sistem Informasi\nKesehatan Remaja',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: textColor,
+                                        height: 1.28,
+                                        letterSpacing: -0.4,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Ruang belajar kesehatan reproduksi yang aman, terpercaya, dan ramah mahasiswa.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: secondaryColor,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Semantics(
+                              liveRegion: true,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 136,
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusPill,
+                                      ),
+                                      child: LinearProgressIndicator(
+                                        value: 1.0,
+                                        minHeight: 4,
+                                        backgroundColor: haloSurface,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              accentColor,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Menyiapkan ruang belajar...',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: secondaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),

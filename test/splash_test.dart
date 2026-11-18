@@ -88,7 +88,7 @@ void main() {
       final darker = bgLum > fgLum ? fgLum : bgLum;
       expect((lighter + .05) / (darker + .05), greaterThan(4.5));
       expect(tester.takeException(), isNull);
-      if (Platform.environment['SIKERA_CAPTURE_SPLASH'] == '1' && !dark) {
+      if (Platform.environment['SIKERA_CAPTURE_SPLASH'] == '1') {
         await tester.runAsync(() async {
           final image =
               await (capture.currentContext!.findRenderObject()!
@@ -97,8 +97,13 @@ void main() {
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
           await Directory('build').create(recursive: true);
           await File(
-            'build/splash-mint.png',
+            'build/splash-review-${dark ? 'dark' : 'light'}.png',
           ).writeAsBytes(bytes!.buffer.asUint8List());
+          if (!dark) {
+            await File(
+              'build/splash-mint.png',
+            ).writeAsBytes(bytes.buffer.asUint8List());
+          }
           image.dispose();
         });
       }
