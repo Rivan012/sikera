@@ -51,7 +51,7 @@ class EducationTab extends GetView<EducationController> {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   children: [
                     _progressSummary(
                       completed,
@@ -59,14 +59,14 @@ class EducationTab extends GetView<EducationController> {
                       progress,
                       isDark,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
                             'Pilih materi',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: isDark
                                   ? AppTheme.textPrimaryDark
@@ -87,31 +87,18 @@ class EducationTab extends GetView<EducationController> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Material(
-                      color: isDark
-                          ? AppTheme.surfaceDark
-                          : AppTheme.surfaceLight,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (
-                            var index = 0;
-                            index < modules.length;
-                            index++
-                          ) ...[
-                            if (index > 0)
-                              Divider(
-                                height: 1,
-                                color: isDark
-                                    ? AppTheme.borderDark
-                                    : AppTheme.borderLight,
-                              ),
-                            _moduleRow(modules[index], isDark),
-                          ],
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < modules.length;
+                          index++
+                        ) ...[
+                          if (index > 0) const SizedBox(height: 12),
+                          _moduleCard(modules[index], isDark),
                         ],
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -127,8 +114,17 @@ class EducationTab extends GetView<EducationController> {
     final textColor = isDark
         ? AppTheme.textPrimaryDark
         : AppTheme.textPrimaryLight;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppTheme.softAccentSurfaceDark
+            : AppTheme.softSurfaceLight,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+        border: Border.all(
+          color: isDark ? AppTheme.borderDark : AppTheme.strongBorderLight,
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -138,37 +134,37 @@ class EducationTab extends GetView<EducationController> {
               color: isDark
                   ? AppTheme.textSecondaryDark
                   : AppTheme.textSecondaryLight,
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
                   '$completed dari $total modul selesai',
-                  style: TextStyle(color: textColor, fontSize: 15, height: 1.4),
+                  style: TextStyle(color: textColor, fontSize: 14, height: 1.4),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Text(
                 '$progress%',
                 style: TextStyle(
                   color: textColor,
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: (progress / 100).clamp(0.0, 1.0),
-              minHeight: 5,
+              minHeight: 4,
               backgroundColor: isDark
                   ? AppTheme.borderDark
                   : AppTheme.borderLight,
@@ -180,6 +176,23 @@ class EducationTab extends GetView<EducationController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _moduleCard(DashboardModuleModel module, bool isDark) {
+    return Material(
+      color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
+      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
+        ),
+        child: _moduleRow(module, isDark),
       ),
     );
   }
@@ -221,7 +234,7 @@ class EducationTab extends GetView<EducationController> {
           });
         },
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final showBanner =
