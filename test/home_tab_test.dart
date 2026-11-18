@@ -52,6 +52,10 @@ void main() {
     Routes.EDUCATION_MODULE_LIST,
     Routes.EDUCATION_MODULE_DETAIL,
     Routes.SELFCARE_PERIOD,
+    Routes.SELFCARE_BMI,
+    Routes.SELFCARE_HYGIENE_GUIDE,
+    Routes.POSTERS,
+    Routes.CASES,
     Routes.TRIVIA,
     Routes.SELFCARE,
   ];
@@ -86,6 +90,7 @@ void main() {
     double height = 844,
     bool dark = false,
     double textScale = 1,
+    bool? enableAutoSlide,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = Size(width, height);
@@ -103,7 +108,10 @@ void main() {
           ).copyWith(textScaler: TextScaler.linear(textScale)),
           child: child!,
         ),
-        home: RepaintBoundary(key: captureKey, child: const HomeTab()),
+        home: RepaintBoundary(
+          key: captureKey,
+          child: HomeTab(enableAutoSlide: enableAutoSlide),
+        ),
         getPages: routes
             .map(
               (route) => GetPage(
@@ -228,21 +236,56 @@ void main() {
     await mount(tester);
     final destinations = {
       'Catat Haid': Routes.SELFCARE_PERIOD,
-      'Kuis Trivia': Routes.TRIVIA,
       'Siklus & IMT': Routes.SELFCARE,
+      'Kalkulator IMT': Routes.SELFCARE_BMI,
+      'Kuis Trivia': Routes.TRIVIA,
+      'Poster Visual': Routes.POSTERS,
+      'Studi Kasus': Routes.CASES,
     };
     for (final entry in destinations.entries) {
-      await tapVisible(tester, find.text(entry.key));
+      expect(find.text(entry.key), findsNothing);
+      await tapVisible(tester, find.byTooltip(entry.key));
       expect(Get.currentRoute, entry.value);
       Get.back();
       await tester.pumpAndSettle();
     }
-    await tapVisible(tester, find.text('Edukasi'));
+    await tapVisible(tester, find.byTooltip('Edukasi'));
     expect(navigation.currentIndex.value, 1);
-    await tapVisible(tester, find.text('Konseling'));
+    await tapVisible(tester, find.byTooltip('Konseling'));
     expect(navigation.currentIndex.value, 2);
     await tapVisible(tester, find.byTooltip('Buka profil'));
     expect(navigation.currentIndex.value, 3);
+  });
+
+  testWidgets('Ruang Belajar auto-slides, wraps around, and supports swipe', (
+    tester,
+  ) async {
+    await mount(tester, enableAutoSlide: true);
+    expect(find.text('Pubertas & Perubahan Tubuh'), findsOneWidget);
+    expect(find.text('2 dari 3'), findsOneWidget);
+
+    // Auto-slides after 4 seconds to module 3
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Menjaga Kesehatan Reproduksi'), findsOneWidget);
+    expect(find.text('3 dari 3'), findsOneWidget);
+
+    // Wraps around after another 4 seconds to module 1
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Mengenal Kesehatan Reproduksi'), findsOneWidget);
+    expect(find.text('1 dari 3'), findsOneWidget);
+
+    // Horizontal swipe advances slide and resets auto-slide timer
+    await tester.fling(
+      find.text('Mengenal Kesehatan Reproduksi'),
+      const Offset(-240, 0),
+      800,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Pubertas & Perubahan Tubuh'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('Error retry and empty modules have working recovery actions', (
@@ -303,7 +346,14 @@ void main() {
         await loader.load();
       }
       for (final dark in [false, true]) {
-        await mount(tester, height: 1400, dark: dark);
+        await mount(tester, height: 1100, dark: dark);
+        await tester.runAsync(
+          () => precacheImage(
+            const AssetImage('assets/logo/sikera_logo_putih.png'),
+            captureKey.currentContext!,
+          ),
+        );
+        await tester.pumpAndSettle();
         final boundary =
             captureKey.currentContext!.findRenderObject()!
                 as RenderRepaintBoundary;
