@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,42 +7,53 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ModuleBanner extends StatefulWidget {
+  // TODO(api-banner): Ubah menjadi `false` setelah endpoint banner modul dari API
+  // sudah menyediakan gambar final untuk tiap modul. Lihat catatan di `chagelog.md`.
+  static bool useStaticPlaceholderBanner = true;
+  static const String staticPlaceholderAsset = 'assets/banner/banner.png';
+
   final String? bannerImage;
+  final int moduleId;
   final int moduleNumber;
   final String? title;
   final double? height;
   final double? width;
   final BorderRadius? borderRadius;
   final BoxFit fit;
+  final AlignmentGeometry alignment;
   final bool useModuleFallback;
   final Widget? overlay;
   final Key? bannerKey;
+  final Color? backgroundColor;
 
   const ModuleBanner({
     super.key,
     this.bannerImage,
+    required this.moduleId,
     required this.moduleNumber,
     this.title,
     this.height,
     this.width,
     this.borderRadius,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.topCenter,
     this.useModuleFallback = false,
     this.overlay,
     this.bannerKey,
+    this.backgroundColor,
   });
 
   /// Normalisasi URL gambar dari backend / endpoint API
-  static String resolveUrl(String? raw, [int moduleNumber = 1]) {
+  static String resolveUrl(String? raw, int moduleId) {
     String url;
     if (raw == null || raw.trim().isEmpty) {
-      url = '${ApiConstants.baseUrl}/modules/$moduleNumber/banner.svg';
+      url = '${ApiConstants.baseUrl}${ApiConstants.moduleBanner(moduleId)}';
     } else {
       final trimmed = raw.trim();
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         url = trimmed;
       } else {
-        final serverBase = ApiConstants.baseUrl.replaceAll('/api/v1', '');
+        final serverBase = Uri.parse(ApiConstants.baseUrl).origin;
         final cleanPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
         url = '$serverBase$cleanPath';
       }
@@ -67,9 +78,8 @@ class ModuleBanner extends StatefulWidget {
 class _ModuleBannerState extends State<ModuleBanner> {
   static final Map<String, String> _svgCache = {};
   String? _svgString;
+  Uint8List? _rasterBytes;
   bool _isLoading = true;
-  bool _isRaster = false;
-  bool _hasError = false;
   String? _activeUrl;
 
   @override
@@ -82,52 +92,24 @@ class _ModuleBannerState extends State<ModuleBanner> {
   void didUpdateWidget(covariant ModuleBanner oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.bannerImage != widget.bannerImage ||
-        oldWidget.moduleNumber != widget.moduleNumber) {
+        oldWidget.moduleId != widget.moduleId) {
       _loadBanner();
     }
   }
 
   Future<void> _loadBanner() async {
-    final url = ModuleBanner.resolveUrl(
-      widget.bannerImage,
-      widget.moduleNumber,
-    );
+    if (ModuleBanner.useStaticPlaceholderBanner) {
+      _isLoading = false;
+      return;
+    }
+
+    final url = ModuleBanner.resolveUrl(widget.bannerImage, widget.moduleId);
     _activeUrl = url;
 
-    // 1. Cek memory cache untuk SVG yang sudah pernah di-fetch
-    if (_svgCache.containsKey(url)) {
-      if (mounted) {
-        setState(() {
-          _svgString = _svgCache[url];
-          _isLoading = false;
-          _isRaster = false;
-          _hasError = false;
-        });
-      }
-      return;
-    }
-
-    // 2. Jika secara eksplisit file raster statis
-    final lower = url.toLowerCase();
-    if (lower.endsWith('.png') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.webp')) {
-      if (mounted) {
-        setState(() {
-          _isRaster = true;
-          _isLoading = false;
-          _hasError = false;
-        });
-      }
-      return;
-    }
-
-    // 3. Muat via HTTP (Mendukung SVG dari endpoint API maupun file statis)
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
+    _rasterBytes = null;
+    _svgString = _svgCache[url];
+    _isLoading = _svgString == null;
+    if (!_isLoading) return;
 
     try {
       final response = await http
@@ -140,36 +122,29 @@ class _ModuleBannerState extends State<ModuleBanner> {
       if (!mounted || _activeUrl != url) return;
 
       if (response.statusCode == 200) {
-        final body = response.body;
-        if (body.contains('<svg') && body.contains('</svg>')) {
-          _svgCache[url] = body;
-          setState(() {
-            _svgString = body;
-            _isLoading = false;
-            _isRaster = false;
-            _hasError = false;
-          });
+        final mime = response.headers['content-type']
+            ?.split(';')
+            .first
+            .trim()
+            .toLowerCase();
+        final bytes = response.bodyBytes;
+        final isSvg =
+            mime == 'image/svg+xml' ||
+            (mime?.startsWith('image/') != true &&
+                utf8
+                    .decode(bytes.take(512).toList(), allowMalformed: true)
+                    .contains('<svg'));
+        if (isSvg) {
+          _svgString = utf8.decode(bytes);
+          _svgCache[url] = _svgString!;
         } else {
-          // Binary raster stream
-          setState(() {
-            _isRaster = true;
-            _isLoading = false;
-            _hasError = false;
-          });
+          _rasterBytes = bytes;
         }
-      } else {
-        setState(() {
-          _hasError = true;
-          _isLoading = false;
-        });
       }
     } catch (_) {
       if (!mounted || _activeUrl != url) return;
-      setState(() {
-        _hasError = true;
-        _isLoading = false;
-      });
     }
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -178,26 +153,33 @@ class _ModuleBannerState extends State<ModuleBanner> {
         widget.borderRadius ?? BorderRadius.circular(AppTheme.radiusLg);
 
     Widget imageWidget;
-    if (_svgString != null) {
+    if (ModuleBanner.useStaticPlaceholderBanner) {
+      imageWidget = Image.asset(
+        ModuleBanner.staticPlaceholderAsset,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        width: widget.width ?? double.infinity,
+        height: widget.height,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(context),
+      );
+    } else if (_svgString != null) {
       imageWidget = SvgPicture.string(
         _svgString!,
         fit: widget.fit,
         width: widget.width ?? double.infinity,
         height: widget.height,
-      );
-    } else if (_isRaster && _activeUrl != null) {
-      imageWidget = Image.network(
-        _activeUrl!,
-        fit: widget.fit,
-        width: widget.width ?? double.infinity,
-        height: widget.height,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return _buildLoadingPlaceholder(context);
-        },
         errorBuilder: (context, error, stackTrace) => _buildFallback(context),
       );
-    } else if (_isLoading && !_hasError) {
+    } else if (_rasterBytes != null) {
+      imageWidget = Image.memory(
+        _rasterBytes!,
+        fit: widget.fit,
+        alignment: widget.alignment,
+        width: widget.width ?? double.infinity,
+        height: widget.height,
+        errorBuilder: (context, error, stackTrace) => _buildFallback(context),
+      );
+    } else if (_isLoading) {
       imageWidget = _buildLoadingPlaceholder(context);
     } else {
       imageWidget = _buildFallback(context);
@@ -210,9 +192,11 @@ class _ModuleBannerState extends State<ModuleBanner> {
         width: widget.width ?? double.infinity,
         height: widget.height,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppTheme.softAccentSurfaceDark
-              : AppTheme.primary50,
+          color:
+              widget.backgroundColor ??
+              (Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.softAccentSurfaceDark
+                  : AppTheme.primary50),
           borderRadius: effectiveRadius,
         ),
         child: Stack(
@@ -246,8 +230,9 @@ class _ModuleBannerState extends State<ModuleBanner> {
   Widget _buildFallback(BuildContext context) {
     if (widget.useModuleFallback) return _buildModuleFallback(context);
     return Image.asset(
-      'assets/banner/banner.png',
+      ModuleBanner.staticPlaceholderAsset,
       fit: widget.fit,
+      alignment: widget.alignment,
       errorBuilder: (context, error, stackTrace) =>
           _buildModuleFallback(context),
     );

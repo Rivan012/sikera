@@ -42,6 +42,7 @@ dependencies:
   flutter_svg: ^2.3.0
   youtube_player_iframe: ^6.0.2
   url_launcher: ^6.3.2
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:
@@ -78,6 +79,7 @@ flutter:
     - assets/logo/
     - assets/banner/
     - assets/icon/home/
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

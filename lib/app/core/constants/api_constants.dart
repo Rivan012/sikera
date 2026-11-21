@@ -1,13 +1,27 @@
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl = 'https://sikera.my.id/api/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://sikera.my.id/api/v1',
+  );
 
   // Auth
   static const String register = '/auth/register';
   static const String login = '/auth/login';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
+
+  // Google Sign-In OAuth client IDs (opsional via --dart-define)
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    defaultValue: '',
+  );
+  static const String googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue:
+        '755858406803-f3sd37akh7eleuibqcfccaapkpq2vu95.apps.googleusercontent.com',
+  );
 
   // Dashboard
   static const String dashboard = '/dashboard';
@@ -16,7 +30,7 @@ class ApiConstants {
   static const String modules = '/modules';
   static String moduleDetail(int id) => '/modules/$id';
   static String pretest(int id) => '/modules/$id/pretest';
-  static String moduleBanner(int id) => '/modules/$id/banner.svg';
+  static String moduleBanner(int id) => '/modules/$id/banner';
   static String topic(int moduleId, int topicId) =>
       '/modules/$moduleId/topic/$topicId';
   static String posttest(int id) => '/modules/$id/posttest';

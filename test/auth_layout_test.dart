@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:sikera/app/core/theme/app_theme.dart';
 import 'package:sikera/app/modules/auth/login/login_controller.dart';
 import 'package:sikera/app/modules/auth/login/login_page.dart';
@@ -155,32 +157,38 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Confirmation keyboard Done submits once while registration is pending', (tester) async {
-    await Get.delete<RegisterController>();
-    final controller = _CountingRegisterController();
-    Get.put<RegisterController>(controller);
-    await mount(
-      tester,
-      const RegisterPage(),
-      false,
-      width: 390,
-      height: 844,
-      textScale: 1,
-    );
-    final confirm = find.byKey(const ValueKey('register-password-confirm'));
-    await tapVisible(tester, confirm);
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    expect(controller.registerCalls, 1);
-    tester.widget<TextField>(confirm).onSubmitted!('');
-    expect(controller.registerCalls, 1);
-    await tester.pump();
-    final field = tester.widget<TextField>(confirm);
-    expect(field.readOnly || field.enabled == false, isTrue);
-    expect(tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed, isNull);
-    expect(tester.takeException(), isNull);
-    controller.isLoading.value = false;
-    await tester.pumpAndSettle();
-  });
+  testWidgets(
+    'Confirmation keyboard Done submits once while registration is pending',
+    (tester) async {
+      await Get.delete<RegisterController>();
+      final controller = _CountingRegisterController();
+      Get.put<RegisterController>(controller);
+      await mount(
+        tester,
+        const RegisterPage(),
+        false,
+        width: 390,
+        height: 844,
+        textScale: 1,
+      );
+      final confirm = find.byKey(const ValueKey('register-password-confirm'));
+      await tapVisible(tester, confirm);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      expect(controller.registerCalls, 1);
+      tester.widget<TextField>(confirm).onSubmitted!('');
+      expect(controller.registerCalls, 1);
+      await tester.pump();
+      final field = tester.widget<TextField>(confirm);
+      expect(field.readOnly || field.enabled == false, isTrue);
+      expect(
+        tester.widget<ElevatedButton>(find.byType(ElevatedButton)).onPressed,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+      controller.isLoading.value = false;
+      await tester.pumpAndSettle();
+    },
+  );
 
   for (final dark in [false, true]) {
     for (final layout in [(390.0, 844.0), (1280.0, 900.0)]) {
@@ -212,7 +220,9 @@ void main() {
         expect(tester.takeException(), isNull);
       });
 
-      testWidgets('Registration fits ${layout.$1}px, dark=$dark', (tester) async {
+      testWidgets('Registration fits ${layout.$1}px, dark=$dark', (
+        tester,
+      ) async {
         await mount(
           tester,
           const RegisterPage(),
@@ -352,6 +362,44 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+    'Registration shows a server error next to its field until edited',
+    (tester) async {
+      await mount(tester, const RegisterPage(), true);
+      final controller = Get.find<RegisterController>();
+      controller.nameController.text = 'Mahasiswa Uji';
+      controller.emailController.text = 'test@example.com';
+      controller.prodiController.text = 'Teknik';
+      controller.usiaController.text = '40';
+      controller.passwordController.text = 'password123';
+      controller.passwordConfirmController.text = 'password123';
+
+      await http.runWithClient(
+        controller.register,
+        () => MockClient(
+          (_) async => http.Response(
+            '{"errors":{"email":["Alamat email sudah digunakan."]}}',
+            422,
+            headers: {'content-type': 'application/json'},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      Get.closeAllSnackbars();
+      await tester.pumpAndSettle();
+      final email = find.byKey(const ValueKey('register-email'));
+      expect(
+        tester.widget<TextField>(email).decoration?.errorText,
+        'Alamat email sudah digunakan.',
+      );
+      await tester.ensureVisible(email);
+      await tester.enterText(email, 'other@example.com');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(email).decoration?.errorText, isNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('Login interactive controls: validation and legal links', (
     tester,

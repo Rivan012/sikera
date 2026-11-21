@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/google_auth_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../routes/app_pages.dart';
@@ -23,8 +24,13 @@ class RegisterController extends GetxController {
   final selectedPendidikan = 'SMA/SMK/MA/Sederajat'.obs;
 
   final isLoading = false.obs;
+  final isGoogleLoading = false.obs;
   final isPasswordHidden = true.obs;
   final errorMessage = ''.obs;
+  final googleErrorMessage = ''.obs;
+  final fieldErrors = Rx<Map<String, String>>({});
+
+  bool get isBusy => isLoading.value || isGoogleLoading.value;
 
   final agamaList = [
     'Islam',
@@ -44,8 +50,19 @@ class RegisterController extends GetxController {
     isPasswordHidden.value = !isPasswordHidden.value;
   }
 
-  Future<void> register() async {
+  void fieldChanged(String field) {
     errorMessage.value = '';
+    googleErrorMessage.value = '';
+    if (fieldErrors.value.containsKey(field)) {
+      fieldErrors.value = {...fieldErrors.value}..remove(field);
+    }
+  }
+
+  Future<void> register() async {
+    if (isBusy) return;
+    errorMessage.value = '';
+    googleErrorMessage.value = '';
+    fieldErrors.value = {};
     final name = nameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text;
@@ -58,13 +75,10 @@ class RegisterController extends GetxController {
     if (name.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        nim.isEmpty ||
         prodi.isEmpty ||
-        fakultas.isEmpty ||
-        usia == null ||
-        usia <= 0) {
+        usiaController.text.trim().isEmpty) {
       const message =
-          'Nama, Usia, NIM, Program Studi, Fakultas, Email, dan Kata Sandi wajib diisi.';
+          'Nama, usia, program studi, email, dan kata sandi wajib diisi.';
       errorMessage.value = message;
       Get.snackbar(
         'Data Belum Lengkap',
@@ -74,6 +88,12 @@ class RegisterController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
+      return;
+    }
+
+    if (usia == null || usia < 15 || usia > 40) {
+      errorMessage.value = 'Masukkan usia antara 15 dan 40 tahun.';
+      fieldErrors.value = {'usia': errorMessage.value};
       return;
     }
 
@@ -106,7 +126,8 @@ class RegisterController extends GetxController {
     }
 
     if (password != passwordConfirm) {
-      const message = 'Konfirmasi kata sandi tidak cocok. Ketik ulang kata sandi yang sama.';
+      const message =
+          'Konfirmasi kata sandi tidak cocok. Ketik ulang kata sandi yang sama.';
       errorMessage.value = message;
       Get.snackbar(
         'Konfirmasi Tidak Cocok',
@@ -123,16 +144,15 @@ class RegisterController extends GetxController {
 
     final requestBody = {
       'name': name,
-      'initials': initialsController.text.trim().isNotEmpty
-          ? initialsController.text.trim()
-          : name.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join(),
+      if (initialsController.text.trim().isNotEmpty)
+        'initials': initialsController.text.trim(),
       'usia': usia,
       'gender': selectedGender.value,
       'agama': selectedAgama.value,
       'prodi': prodi,
-      'fakultas': fakultas,
+      if (fakultas.isNotEmpty) 'fakultas': fakultas,
       'pendidikan_terakhir': selectedPendidikan.value,
-      'nim': nim,
+      if (nim.isNotEmpty) 'nim': nim,
       'email': email,
       'password': password,
       'password_confirmation': passwordConfirm,
@@ -144,17 +164,28 @@ class RegisterController extends GetxController {
       auth: false,
     );
 
-    isLoading.value = false;
-
-    if (response.success && response.data != null) {
-      final token = response.data['token']?.toString();
-      final user = response.data['user'];
-
-      if (token != null) {
-        await StorageService.setToken(token);
+    if (response.success) {
+      final data = response.data;
+      final token = data is Map ? data['token'] : null;
+      final user = data is Map ? data['user'] : null;
+      if (token is! String ||
+          token.trim().isEmpty ||
+          user is! Map ||
+          (int.tryParse('${user['id']}') ?? 0) <= 0) {
+        isLoading.value = false;
+        errorMessage.value =
+            'Sesi pendaftaran belum tersedia. Coba masuk dengan email dan kata sandi Anda.';
+        return;
       }
-      if (user != null) {
+      try {
+        await StorageService.setToken(token);
         await StorageService.setUserJson(jsonEncode(user));
+      } catch (_) {
+        await StorageService.clearAuth();
+        errorMessage.value = 'Sesi gagal disimpan. Coba masuk kembali.';
+        return;
+      } finally {
+        isLoading.value = false;
       }
 
       Get.offAllNamed(Routes.TERMS_PRIVACY_CONSENT);
@@ -167,6 +198,17 @@ class RegisterController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } else {
+      isLoading.value = false;
+      final data = response.data;
+      final errors = data is Map ? data['errors'] : null;
+      if (response.statusCode == 422 && errors is Map) {
+        fieldErrors.value = {
+          for (final entry in errors.entries)
+            entry.key.toString(): entry.value is List
+                ? (entry.value as List).join('\n')
+                : entry.value.toString(),
+        };
+      }
       String errorText =
           response.message ?? 'Terjadi kesalahan saat mendaftar.';
       if (errorText.contains('users.nim') ||
@@ -190,6 +232,71 @@ class RegisterController extends GetxController {
         duration: const Duration(seconds: 4),
       );
     }
+  }
+
+  Future<void> registerWithGoogle() async {
+    if (isBusy) return;
+    isGoogleLoading.value = true;
+    googleErrorMessage.value = '';
+    errorMessage.value = '';
+
+    final result = await GoogleAuthService.signIn();
+
+    if (result.canceled) {
+      isGoogleLoading.value = false;
+      return;
+    }
+
+    if (result.success && result.token != null && result.user != null) {
+      try {
+        await StorageService.setToken(result.token!);
+        await StorageService.setUserJson(jsonEncode(result.user));
+      } catch (_) {
+        await StorageService.clearAuth();
+        isGoogleLoading.value = false;
+        const message = 'Sesi pendaftaran gagal disimpan. Coba masuk kembali.';
+        googleErrorMessage.value = message;
+        Get.snackbar(
+          'Pendaftaran Gagal',
+          message,
+          backgroundColor: AppTheme.error,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      } finally {
+        isGoogleLoading.value = false;
+      }
+
+      Get.offAllNamed(
+        StorageService.termsPrivacyAccepted
+            ? Routes.HOME
+            : Routes.TERMS_PRIVACY_CONSENT,
+      );
+      Get.snackbar(
+        'Berhasil Masuk',
+        'Selamat datang di aplikasi SIKERA.',
+        backgroundColor: AppTheme.success,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    isGoogleLoading.value = false;
+    googleErrorMessage.value =
+        result.message ??
+        'Gagal melanjutkan dengan Google. Periksa koneksi internet lalu coba lagi.';
+    Get.snackbar(
+      'Gagal Daftar dengan Google',
+      googleErrorMessage.value,
+      backgroundColor: AppTheme.error,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+    );
   }
 
   @override

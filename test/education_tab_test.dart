@@ -114,6 +114,16 @@ void main() {
         await tester.pumpWidget(app(textScale: 1, dark: dark));
         await tester.pumpAndSettle();
         expect(find.text('Kemajuan belajar'), findsOneWidget);
+        bool imagesReady() => tester
+            .widgetList<RawImage>(find.byType(RawImage))
+            .every((image) => image.image != null);
+        for (var attempt = 0; attempt < 60 && !imagesReady(); attempt++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)),
+          );
+          await tester.pump();
+        }
+        expect(imagesReady(), isTrue);
         await tester.pump(const Duration(milliseconds: 100));
         final boundary =
             captureKey.currentContext!.findRenderObject()!
@@ -131,11 +141,31 @@ void main() {
       }
     }
 
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpWidget(app(textScale: 1));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(ModuleBanner), findsNWidgets(2));
+    expect(find.byType(ShaderMask), findsNWidgets(2));
+    expect(find.text('2/8 submateri tuntas'), findsOneWidget);
+    final continueCta = find.byKey(const ValueKey('education-continue-cta'));
+    expect(continueCta, findsOneWidget);
+    expect(tester.getSize(continueCta).height, greaterThanOrEqualTo(48));
+
     tester.view.physicalSize = const Size(720, 900);
     await tester.pumpWidget(app(textScale: 1));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.byType(ModuleBanner), findsOneWidget);
+    expect(find.byType(ModuleBanner), findsNWidgets(2));
+    expect(find.byType(ShaderMask), findsNWidgets(2));
+
+    await tester.tap(continueCta);
+    await tester.pumpAndSettle();
+    expect(controller.openedModule, 1);
+    expect(Get.currentRoute, Routes.EDUCATION_MODULE_DETAIL);
+    Get.back();
+    await tester.pumpAndSettle();
+    controller.openedModule = null;
 
     final firstModule = find.text(
       'Mengenal Kesehatan Reproduksi dan Perawatan Tubuh',

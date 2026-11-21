@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/services/api_service.dart';
+import '../../core/services/google_auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../data/models/user_model.dart';
 import '../../routes/app_pages.dart';
@@ -58,6 +59,7 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     await ApiService.post(ApiConstants.logout);
+    await GoogleAuthService.signOut();
     await StorageService.clearAuth();
     Get.offAllNamed(Routes.LOGIN);
   }

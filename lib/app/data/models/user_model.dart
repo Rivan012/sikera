@@ -2,6 +2,7 @@ class UserModel {
   final int id;
   final String name;
   final String? email;
+  final String? avatar;
   final String? initials;
   final int? usia;
   final String? gender;
@@ -17,6 +18,7 @@ class UserModel {
     required this.id,
     required this.name,
     this.email,
+    this.avatar,
     this.initials,
     this.usia,
     this.gender,
@@ -34,6 +36,7 @@ class UserModel {
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString(),
+      avatar: json['avatar']?.toString(),
       initials: json['initials']?.toString(),
       usia: json['usia'] is int ? json['usia'] : int.tryParse(json['usia']?.toString() ?? ''),
       gender: json['gender']?.toString(),
@@ -52,6 +55,7 @@ class UserModel {
       'id': id,
       'name': name,
       'email': email,
+      'avatar': avatar,
       'initials': initials,
       'usia': usia,
       'gender': gender,

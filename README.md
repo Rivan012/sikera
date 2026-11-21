@@ -62,6 +62,16 @@ flutter run -d <device-id>
 
 ## Konfigurasi API
 
+### Login Google di perangkat
+
+Tombol Google membuka pemilih akun di perangkat dan mengirim `{"id_token":"<ID token Google>"}` ke `POST /api/v1/auth/login`. Backend memverifikasi token dan mengembalikan `data.token` untuk sesi SIKERA.
+
+- Android memerlukan klien OAuth Android untuk package `com.sikera.app.sikera` dan SHA-1 sertifikat penandatangan build di proyek Google Cloud yang sama dengan klien web SIKERA.
+- Di iOS, daftarkan bundle ID Runner di proyek Google yang sama. Berikan ID klien iOS melalui `--dart-define=GOOGLE_CLIENT_ID=<id-klien-ios>` dan isi build setting Xcode `GOOGLE_REVERSED_CLIENT_ID` dengan nilai `REVERSED_CLIENT_ID` dari konfigurasi iOS Google.
+- Jika backend memakai klien web yang berbeda, berikan `--dart-define=GOOGLE_SERVER_CLIENT_ID=<id-klien-web>` saat membangun aplikasi. Nilainya harus sama dengan `GOOGLE_CLIENT_ID` di backend Laravel.
+
+### Alamat server
+
 Base URL aplikasi diatur di:
 
 ```text

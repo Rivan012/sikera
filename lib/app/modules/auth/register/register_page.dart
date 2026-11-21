@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../routes/app_pages.dart';
 import '../../legal/widgets/legal_links.dart';
+import '../widgets/google_auth_button.dart';
 import 'register_controller.dart';
 
 class RegisterPage extends GetView<RegisterController> {
@@ -14,7 +15,9 @@ class RegisterPage extends GetView<RegisterController> {
     final colors = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight;
-    final headingColor = isDark ? AppTheme.textPrimaryDark : AppTheme.primary900;
+    final headingColor = isDark
+        ? AppTheme.textPrimaryDark
+        : AppTheme.primary900;
     final secondaryColor = isDark
         ? AppTheme.textSecondaryDark
         : AppTheme.textSecondaryLight;
@@ -59,7 +62,11 @@ class RegisterPage extends GetView<RegisterController> {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: Obx(() {
                   final loading = controller.isLoading.value;
+                  final googleLoading = controller.isGoogleLoading.value;
+                  final busy = loading || googleLoading;
                   final error = controller.errorMessage.value;
+                  final googleError = controller.googleErrorMessage.value;
+                  final fieldErrors = controller.fieldErrors.value;
                   final selectedGender = controller.selectedGender.value;
                   final selectedAgama = controller.selectedAgama.value;
                   final selectedPendidikan =
@@ -127,7 +134,62 @@ class RegisterPage extends GetView<RegisterController> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: 16),
+                                GoogleAuthButton(
+                                  key: const ValueKey('google-register-button'),
+                                  label: 'Daftar dengan Google',
+                                  isLoading: googleLoading,
+                                  disabled: loading,
+                                  compact: compact,
+                                  onPressed: controller.registerWithGoogle,
+                                ),
+                                if (googleError.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: colors.errorContainer,
+                                      borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusMd,
+                                      ),
+                                      border: Border.all(
+                                        color: colors.error,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.error_outline_rounded,
+                                          size: 20,
+                                          color: colors.onErrorContainer,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Semantics(
+                                            liveRegion: true,
+                                            child: Text(
+                                              googleError,
+                                              style: TextStyle(
+                                                color: colors.onErrorContainer,
+                                                fontSize: 13.5,
+                                                fontWeight: FontWeight.w500,
+                                                height: 1.45,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
+                                const AuthDivider(
+                                  label: 'atau isi formulir manual',
+                                ),
+                                const SizedBox(height: 16),
 
                                 // Section 1: Data Pribadi
                                 Container(
@@ -162,6 +224,8 @@ class RegisterPage extends GetView<RegisterController> {
                                       _field(
                                         context,
                                         key: 'register-name',
+                                        apiField: 'name',
+                                        errors: fieldErrors,
                                         label: 'Nama Lengkap',
                                         hint: 'Nama sesuai KTM',
                                         controller: controller.nameController,
@@ -177,6 +241,8 @@ class RegisterPage extends GetView<RegisterController> {
                                         first: _field(
                                           context,
                                           key: 'register-initials',
+                                          apiField: 'initials',
+                                          errors: fieldErrors,
                                           label: 'Inisial (Opsional)',
                                           hint: 'Contoh: AP',
                                           controller:
@@ -187,8 +253,10 @@ class RegisterPage extends GetView<RegisterController> {
                                         second: _field(
                                           context,
                                           key: 'register-age',
+                                          apiField: 'usia',
+                                          errors: fieldErrors,
                                           label: 'Usia (Tahun)',
-                                          hint: 'Contoh: 20',
+                                          hint: '15 sampai 40 tahun',
                                           controller: controller.usiaController,
                                           loading: loading,
                                           keyboardType: TextInputType.number,
@@ -213,6 +281,7 @@ class RegisterPage extends GetView<RegisterController> {
                                         groupValue: selectedGender,
                                         onChanged: (val) {
                                           if (val != null && !loading) {
+                                            controller.fieldChanged('gender');
                                             controller.selectedGender.value =
                                                 val;
                                           }
@@ -271,18 +340,26 @@ class RegisterPage extends GetView<RegisterController> {
                                                 ],
                                               ),
                                       ),
+                                      if (fieldErrors['gender']
+                                          case final message?)
+                                        Text(
+                                          message,
+                                          style: TextStyle(color: colors.error),
+                                        ),
                                       const SizedBox(height: 16),
                                       _responsivePair(
                                         twoCol: twoCol,
                                         first: _dropdownField(
                                           context,
                                           label: 'Agama',
+                                          error: fieldErrors['agama'],
                                           value: selectedAgama,
                                           items: controller.agamaList,
                                           loading: loading,
                                           headingColor: headingColor,
                                           onChanged: (val) {
                                             if (val != null) {
+                                              controller.fieldChanged('agama');
                                               controller.selectedAgama.value =
                                                   val;
                                             }
@@ -291,12 +368,17 @@ class RegisterPage extends GetView<RegisterController> {
                                         second: _dropdownField(
                                           context,
                                           label: 'Pendidikan Terakhir',
+                                          error:
+                                              fieldErrors['pendidikan_terakhir'],
                                           value: selectedPendidikan,
                                           items: controller.pendidikanList,
                                           loading: loading,
                                           headingColor: headingColor,
                                           onChanged: (val) {
                                             if (val != null) {
+                                              controller.fieldChanged(
+                                                'pendidikan_terakhir',
+                                              );
                                               controller
                                                       .selectedPendidikan
                                                       .value =
@@ -334,7 +416,7 @@ class RegisterPage extends GetView<RegisterController> {
                                         step: '2',
                                         title: 'Informasi Akademik & Akun',
                                         subtitle:
-                                            'Gunakan NIM dan email aktif yang dapat dihubungi.',
+                                            'Gunakan alamat email aktif untuk masuk ke akun.',
                                         isDark: isDark,
                                         headingColor: headingColor,
                                         secondaryColor: secondaryColor,
@@ -343,7 +425,9 @@ class RegisterPage extends GetView<RegisterController> {
                                       _field(
                                         context,
                                         key: 'register-nim',
-                                        label: 'Nomor Induk Mahasiswa (NIM)',
+                                        apiField: 'nim',
+                                        errors: fieldErrors,
+                                        label: 'NIM (Opsional)',
                                         hint: 'Masukkan NIM sesuai KTM',
                                         controller: controller.nimController,
                                         loading: loading,
@@ -355,6 +439,8 @@ class RegisterPage extends GetView<RegisterController> {
                                         first: _field(
                                           context,
                                           key: 'register-program',
+                                          apiField: 'prodi',
+                                          errors: fieldErrors,
                                           label: 'Program Studi',
                                           hint: 'Contoh: Sistem Informasi',
                                           controller:
@@ -365,7 +451,9 @@ class RegisterPage extends GetView<RegisterController> {
                                         second: _field(
                                           context,
                                           key: 'register-faculty',
-                                          label: 'Fakultas',
+                                          apiField: 'fakultas',
+                                          errors: fieldErrors,
+                                          label: 'Fakultas (Opsional)',
                                           hint: 'Contoh: Teknik',
                                           controller:
                                               controller.fakultasController,
@@ -377,6 +465,8 @@ class RegisterPage extends GetView<RegisterController> {
                                       _field(
                                         context,
                                         key: 'register-email',
+                                        apiField: 'email',
+                                        errors: fieldErrors,
                                         label: 'Email Aktif',
                                         hint: 'nama@kampus.ac.id',
                                         controller: controller.emailController,
@@ -421,12 +511,12 @@ class RegisterPage extends GetView<RegisterController> {
                                                 enableSuggestions: false,
                                                 textInputAction:
                                                     TextInputAction.next,
-                                                onChanged: (_) =>
-                                                    controller
-                                                        .errorMessage
-                                                        .value =
-                                                        '',
+                                                onChanged: (_) => controller
+                                                    .fieldChanged('password'),
                                                 decoration: InputDecoration(
+                                                  errorText:
+                                                      fieldErrors['password'],
+                                                  errorMaxLines: 6,
                                                   hintText:
                                                       'Minimal 6 karakter',
                                                   enabledBorder:
@@ -500,10 +590,9 @@ class RegisterPage extends GetView<RegisterController> {
                                                 textInputAction:
                                                     TextInputAction.done,
                                                 onChanged: (_) =>
-                                                    controller
-                                                        .errorMessage
-                                                        .value =
-                                                        '',
+                                                    controller.fieldChanged(
+                                                      'password_confirmation',
+                                                    ),
                                                 onSubmitted: (_) {
                                                   if (!controller
                                                       .isLoading
@@ -512,8 +601,10 @@ class RegisterPage extends GetView<RegisterController> {
                                                   }
                                                 },
                                                 decoration: InputDecoration(
-                                                  hintText:
-                                                      'Ulangi kata sandi',
+                                                  errorText:
+                                                      fieldErrors['password_confirmation'],
+                                                  errorMaxLines: 6,
+                                                  hintText: 'Ulangi kata sandi',
                                                   enabledBorder:
                                                       OutlineInputBorder(
                                                         borderRadius:
@@ -615,7 +706,7 @@ class RegisterPage extends GetView<RegisterController> {
                                       vertical: 16,
                                     ),
                                   ),
-                                  onPressed: loading
+                                  onPressed: busy
                                       ? null
                                       : controller.register,
                                   child: loading
@@ -661,7 +752,7 @@ class RegisterPage extends GetView<RegisterController> {
                                       ),
                                     ),
                                     TextButton(
-                                      onPressed: loading
+                                      onPressed: busy
                                           ? null
                                           : () {
                                               if (Navigator.of(
@@ -705,9 +796,7 @@ class RegisterPage extends GetView<RegisterController> {
     required Color headingColor,
     required Color secondaryColor,
   }) {
-    final stepBg = isDark
-        ? AppTheme.softAccentSurfaceDark
-        : AppTheme.primary50;
+    final stepBg = isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50;
     final stepBorder = isDark
         ? AppTheme.borderDark
         : AppTheme.strongBorderLight;
@@ -780,11 +869,7 @@ class RegisterPage extends GetView<RegisterController> {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        first,
-        const SizedBox(height: 16),
-        second,
-      ],
+      children: [first, const SizedBox(height: 16), second],
     );
   }
 
@@ -837,6 +922,7 @@ class RegisterPage extends GetView<RegisterController> {
   Widget _dropdownField(
     BuildContext context, {
     required String label,
+    required String? error,
     required String value,
     required List<String> items,
     required bool loading,
@@ -861,6 +947,8 @@ class RegisterPage extends GetView<RegisterController> {
           itemHeight: null,
           initialValue: value,
           decoration: InputDecoration(
+            errorText: error,
+            errorMaxLines: 6,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               borderSide: BorderSide(color: colors.outline),
@@ -882,6 +970,8 @@ class RegisterPage extends GetView<RegisterController> {
   Widget _field(
     BuildContext context, {
     required String key,
+    required String apiField,
+    required Map<String, String> errors,
     required String label,
     required String hint,
     required TextEditingController controller,
@@ -893,7 +983,9 @@ class RegisterPage extends GetView<RegisterController> {
   }) {
     final colors = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final headingColor = isDark ? AppTheme.textPrimaryDark : AppTheme.primary900;
+    final headingColor = isDark
+        ? AppTheme.textPrimaryDark
+        : AppTheme.primary900;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -918,8 +1010,10 @@ class RegisterPage extends GetView<RegisterController> {
             textInputAction: textInputAction,
             autocorrect: false,
             readOnly: loading,
-            onChanged: (_) => this.controller.errorMessage.value = '',
+            onChanged: (_) => this.controller.fieldChanged(apiField),
             decoration: InputDecoration(
+              errorText: errors[apiField],
+              errorMaxLines: 6,
               hintText: hint,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),

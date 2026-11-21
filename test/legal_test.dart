@@ -221,13 +221,16 @@ void main() {
     final controller = RegisterController();
     addTearDown(controller.onClose);
     controller.nameController.text = 'Test user';
-    controller.usiaController.text = '19';
-    controller.nimController.text = 'TEST123';
     controller.prodiController.text = 'Sistem Informasi';
-    controller.fakultasController.text = 'Teknik';
     controller.emailController.text = 'test@example.com';
     controller.passwordController.text = 'test-password';
     controller.passwordConfirmController.text = 'test-password';
+    for (final age in ['14', '41']) {
+      controller.usiaController.text = age;
+      await controller.register();
+      expect(controller.errorMessage.value, contains('15 dan 40'));
+    }
+    controller.usiaController.text = '15';
     await http.runWithClient(
       () async {
         await controller.register();
@@ -235,6 +238,11 @@ void main() {
       () => MockClient((request) async {
         expect(request.url.path.endsWith('/auth/register'), true);
         expect(request.headers.containsKey('authorization'), false);
+        final body = jsonDecode(request.body) as Map;
+        expect(body['usia'], 15);
+        for (final field in ['nim', 'fakultas', 'initials']) {
+          expect(body.containsKey(field), isFalse);
+        }
         return http.Response(
           jsonEncode({
             'success': true,

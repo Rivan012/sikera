@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../routes/app_pages.dart';
 import '../../legal/widgets/legal_links.dart';
+import '../widgets/google_auth_button.dart';
 import 'login_controller.dart';
 
 class LoginPage extends GetView<LoginController> {
@@ -344,6 +345,8 @@ class LoginPage extends GetView<LoginController> {
 
     return Obx(() {
       final loading = controller.isLoading.value;
+      final googleLoading = controller.isGoogleLoading.value;
+      final busy = loading || googleLoading;
       final error = controller.errorMessage.value;
 
       return AutofillGroup(
@@ -412,7 +415,7 @@ class LoginPage extends GetView<LoginController> {
                         AutofillHints.email,
                       ],
                       autocorrect: false,
-                      readOnly: loading,
+                      readOnly: busy,
                       onChanged: (_) => controller.errorMessage.value = '',
                       decoration: InputDecoration(
                         hintText: 'nama@kampus.ac.id',
@@ -461,10 +464,10 @@ class LoginPage extends GetView<LoginController> {
                       autofillHints: const [AutofillHints.password],
                       autocorrect: false,
                       enableSuggestions: false,
-                      readOnly: loading,
+                      readOnly: busy,
                       onChanged: (_) => controller.errorMessage.value = '',
                       onSubmitted: (_) {
-                        if (!controller.isLoading.value) {
+                        if (!controller.isBusy) {
                           controller.login();
                         }
                       },
@@ -544,7 +547,7 @@ class LoginPage extends GetView<LoginController> {
                   ],
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: loading ? null : controller.login,
+                    onPressed: busy ? null : controller.login,
                     style: ElevatedButton.styleFrom(
                       disabledBackgroundColor: colors.surfaceContainerHigh,
                       disabledForegroundColor: colors.onSurface,
@@ -579,6 +582,17 @@ class LoginPage extends GetView<LoginController> {
                           )
                         : const Text('Masuk', textAlign: TextAlign.center),
                   ),
+                  const SizedBox(height: 16),
+                  const AuthDivider(label: 'atau'),
+                  const SizedBox(height: 16),
+                  GoogleAuthButton(
+                    key: const ValueKey('google-login-button'),
+                    label: 'Masuk dengan Google',
+                    isLoading: googleLoading,
+                    disabled: loading,
+                    compact: compact,
+                    onPressed: controller.loginWithGoogle,
+                  ),
                 ],
               ),
             ),
@@ -596,7 +610,7 @@ class LoginPage extends GetView<LoginController> {
                   ),
                 ),
                 TextButton(
-                  onPressed: loading
+                  onPressed: busy
                       ? null
                       : () => Get.toNamed(Routes.REGISTER),
                   child: const Text(

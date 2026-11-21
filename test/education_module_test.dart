@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:sikera/app/core/constants/api_constants.dart';
 import 'package:sikera/app/data/models/module_model.dart';
 import 'package:sikera/app/modules/education/widgets/module_banner.dart';
@@ -79,15 +83,15 @@ void main() {
     test('Defaults to API endpoint banner for null and empty inputs', () {
       expect(
         ModuleBanner.resolveUrl(null, 1),
-        '${ApiConstants.baseUrl}/modules/1/banner.svg',
+        '${ApiConstants.baseUrl}/modules/1/banner',
       );
       expect(
         ModuleBanner.resolveUrl('', 2),
-        '${ApiConstants.baseUrl}/modules/2/banner.svg',
+        '${ApiConstants.baseUrl}/modules/2/banner',
       );
       expect(
         ModuleBanner.resolveUrl('   ', 3),
-        '${ApiConstants.baseUrl}/modules/3/banner.svg',
+        '${ApiConstants.baseUrl}/modules/3/banner',
       );
     });
   });
@@ -115,6 +119,93 @@ void main() {
   });
 
   group('ModuleBanner Widget Tests', () {
+    testWidgets('Uses temporary static placeholder banner by default', (
+      tester,
+    ) async {
+      expect(ModuleBanner.useStaticPlaceholderBanner, isTrue);
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ModuleBanner(
+              moduleId: 1,
+              moduleNumber: 1,
+              height: 140,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final image = tester.widget<Image>(find.byType(Image)).image;
+      expect(image, isA<AssetImage>());
+      expect(
+        (image as AssetImage).assetName,
+        ModuleBanner.staticPlaceholderAsset,
+      );
+    });
+
+    testWidgets('Uses the module ID and displays each response format once', (
+      tester,
+    ) async {
+      ModuleBanner.useStaticPlaceholderBanner = false;
+      addTearDown(() => ModuleBanner.useStaticPlaceholderBanner = true);
+      final requests = <String>[];
+      final png = await rootBundle.load('assets/banner/banner.png');
+      final jpg = await rootBundle.load('assets/icon/home/edukasi.jpg');
+      await http.runWithClient(
+        () async {
+          for (final id in [31, 32, 33, 34]) {
+            await tester.pumpWidget(
+              MaterialApp(
+                home: Scaffold(
+                  body: ModuleBanner(
+                    moduleId: id,
+                    moduleNumber: 2,
+                    height: 140,
+                    useModuleFallback: true,
+                  ),
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            if (id == 31) {
+              expect(find.byType(SvgPicture), findsOneWidget);
+            } else if (id == 34) {
+              expect(find.text('Modul 2'), findsOneWidget);
+            } else {
+              expect(
+                tester.widget<Image>(find.byType(Image)).image,
+                isA<MemoryImage>(),
+              );
+            }
+          }
+        },
+        () => MockClient((request) async {
+          requests.add(request.url.toString());
+          if (request.url.path.endsWith('/31/banner')) {
+            return http.Response(
+              '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"/>',
+              200,
+              headers: {'content-type': 'image/svg+xml'},
+            );
+          }
+          if (request.url.path.endsWith('/34/banner')) {
+            return http.Response('', 404);
+          }
+          final isPng = request.url.path.endsWith('/32/banner');
+          return http.Response.bytes(
+            Uint8List.sublistView(isPng ? png : jpg),
+            200,
+            headers: {'content-type': isPng ? 'image/png' : 'image/jpeg'},
+          );
+        }),
+      );
+      expect(requests, [
+        for (final id in [31, 32, 33, 34])
+          '${ApiConstants.baseUrl}/modules/$id/banner',
+      ]);
+    });
+
     testWidgets('Renders ModuleBanner with asset fallback and overlay', (
       tester,
     ) async {
@@ -122,6 +213,7 @@ void main() {
         const MaterialApp(
           home: Scaffold(
             body: ModuleBanner(
+              moduleId: 12,
               bannerImage: null,
               moduleNumber: 2,
               title: 'Pubertas & Perubahan Tubuh',

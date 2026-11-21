@@ -135,6 +135,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           image: true,
           excludeSemantics: true,
           child: ModuleBanner(
+            moduleId: module.id,
             bannerImage: module.bannerImage,
             moduleNumber: module.moduleNumber,
             title: module.title,

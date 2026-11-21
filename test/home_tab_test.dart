@@ -4,14 +4,19 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:sikera/app/core/theme/app_theme.dart';
 import 'package:sikera/app/data/models/dashboard_model.dart';
 import 'package:sikera/app/data/models/user_model.dart';
+import 'package:sikera/app/modules/education/education_controller.dart';
+import 'package:sikera/app/modules/education/widgets/module_banner.dart';
 import 'package:sikera/app/modules/home/home_controller.dart';
 import 'package:sikera/app/modules/home/home_tab.dart';
 import 'package:sikera/app/modules/main_nav/main_nav_controller.dart';
+import 'package:sikera/app/modules/main_nav/main_nav_page.dart';
+import 'package:sikera/app/modules/profile/profile_controller.dart';
 import 'package:sikera/app/routes/app_pages.dart';
 
 class _HomeController extends HomeController {
@@ -30,6 +35,24 @@ class _HomeController extends HomeController {
 class _NavigationController extends MainNavController {
   @override
   void changeTab(int index) => currentIndex.value = index;
+}
+
+class _EducationController extends EducationController {
+  @override
+  // ignore: must_call_super
+  void onInit() {}
+
+  @override
+  Future<void> fetchModules({bool forceRefresh = false}) async {}
+}
+
+class _ProfileController extends ProfileController {
+  @override
+  // ignore: must_call_super
+  void onInit() {}
+
+  @override
+  Future<void> fetchProfile({bool forceRefresh = false}) async {}
 }
 
 DashboardModuleModel _module(int id, String title, int progress) =>
@@ -56,7 +79,6 @@ void main() {
     Routes.SELFCARE_HYGIENE_GUIDE,
     Routes.POSTERS,
     Routes.CASES,
-    Routes.TRIVIA,
     Routes.SELFCARE,
   ];
 
@@ -71,6 +93,7 @@ void main() {
       streakDays: 3,
     );
     controller.dashboardData.value = DashboardDataModel(
+      selfcare: {'is_female': true},
       modules: [
         _module(1, 'Mengenal Kesehatan Reproduksi', 100),
         _module(2, 'Pubertas & Perubahan Tubuh', 50),
@@ -142,10 +165,16 @@ void main() {
       ) async {
         await mount(tester, width: width, dark: dark);
         expect(tester.takeException(), isNull);
+        expect(find.text('SIKERA'), findsOneWidget);
+        expect(find.text('Sistem Informasi Kesehatan Remaja'), findsOneWidget);
         expect(find.text('120'), findsNothing);
         expect(find.text('1 dari 3 modul selesai'), findsOneWidget);
         expect(find.text('50%'), findsOneWidget);
         expect(find.byTooltip('Notifikasi SIKERA'), findsNothing);
+        expect(
+          tester.getTopLeft(find.byType(TextField)).dy,
+          lessThan(tester.getTopLeft(find.text('Ruang Belajar')).dy),
+        );
         await tester.drag(
           find.byType(SingleChildScrollView),
           const Offset(0, -1800),
@@ -155,7 +184,12 @@ void main() {
         expect(find.text('Mood Diary'), findsNothing);
         expect(find.text('Wawasan & Aktivitas'), findsNothing);
         expect(find.text('Mitos vs Fakta Kaspro'), findsNothing);
+        expect(find.text('Kuis Trivia'), findsNothing);
         expect(find.text('Poster & Studi Kasus'), findsNothing);
+        expect(find.text('Konseling'), findsNothing);
+        expect(find.text('Siklus & IMT'), findsNothing);
+        expect(find.text('Poster Visual'), findsNothing);
+        expect(find.text('Studi Kasus'), findsNothing);
       });
     }
     testWidgets('Home supports enlarged text in ${dark ? 'dark' : 'light'}', (
@@ -205,8 +239,9 @@ void main() {
     'Module selector and existing learning actions keep their destinations',
     (tester) async {
       await mount(tester);
+      expect(find.byType(ModuleBanner), findsOneWidget);
       await tapVisible(tester, find.byTooltip('Modul berikutnya'));
-      expect(find.text('Menjaga Kesehatan Reproduksi'), findsOneWidget);
+      expect(find.text('0 dari 4 submateri selesai'), findsOneWidget);
       await tapVisible(
         tester,
         find.widgetWithText(ElevatedButton, 'Mulai Belajar'),
@@ -236,54 +271,51 @@ void main() {
     await mount(tester);
     final destinations = {
       'Catat Haid': Routes.SELFCARE_PERIOD,
-      'Siklus & IMT': Routes.SELFCARE,
       'Kalkulator IMT': Routes.SELFCARE_BMI,
-      'Kuis Trivia': Routes.TRIVIA,
-      'Poster Visual': Routes.POSTERS,
-      'Studi Kasus': Routes.CASES,
     };
     for (final entry in destinations.entries) {
-      expect(find.text(entry.key), findsNothing);
-      await tapVisible(tester, find.byTooltip(entry.key));
+      final button = find.widgetWithText(TextButton, entry.key);
+      expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+      await tapVisible(tester, button);
       expect(Get.currentRoute, entry.value);
       Get.back();
       await tester.pumpAndSettle();
     }
-    await tapVisible(tester, find.byTooltip('Edukasi'));
+    final eduButton = find.widgetWithText(TextButton, 'Edukasi');
+    expect(tester.getSize(eduButton).height, greaterThanOrEqualTo(48));
+    await tapVisible(tester, eduButton);
     expect(navigation.currentIndex.value, 1);
-    await tapVisible(tester, find.byTooltip('Konseling'));
-    expect(navigation.currentIndex.value, 2);
     await tapVisible(tester, find.byTooltip('Buka profil'));
-    expect(navigation.currentIndex.value, 3);
+    expect(navigation.currentIndex.value, 2);
   });
 
   testWidgets('Ruang Belajar auto-slides, wraps around, and supports swipe', (
     tester,
   ) async {
     await mount(tester, enableAutoSlide: true);
-    expect(find.text('Pubertas & Perubahan Tubuh'), findsOneWidget);
-    expect(find.text('2 dari 3'), findsOneWidget);
+    expect(find.text('2 dari 4 submateri selesai'), findsOneWidget);
+    expect(find.bySemanticsLabel('Modul 2 dari 3'), findsOneWidget);
 
     // Auto-slides after 4 seconds to module 3
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
-    expect(find.text('Menjaga Kesehatan Reproduksi'), findsOneWidget);
-    expect(find.text('3 dari 3'), findsOneWidget);
+    expect(find.text('0 dari 4 submateri selesai'), findsOneWidget);
+    expect(find.bySemanticsLabel('Modul 3 dari 3'), findsOneWidget);
 
     // Wraps around after another 4 seconds to module 1
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
-    expect(find.text('Mengenal Kesehatan Reproduksi'), findsOneWidget);
-    expect(find.text('1 dari 3'), findsOneWidget);
+    expect(find.text('4 dari 4 submateri selesai'), findsOneWidget);
+    expect(find.bySemanticsLabel('Modul 1 dari 3'), findsOneWidget);
 
     // Horizontal swipe advances slide and resets auto-slide timer
     await tester.fling(
-      find.text('Mengenal Kesehatan Reproduksi'),
+      find.byType(ModuleBanner),
       const Offset(-240, 0),
       800,
     );
     await tester.pumpAndSettle();
-    expect(find.text('Pubertas & Perubahan Tubuh'), findsOneWidget);
+    expect(find.text('2 dari 4 submateri selesai'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -331,7 +363,48 @@ void main() {
     await tester.pump();
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
-    expect(navigation.currentIndex.value, 3);
+    expect(navigation.currentIndex.value, 2);
+  });
+
+  testWidgets('Bottom navigation shows Beranda, Edukasi, Profil without Konseling', (
+    tester,
+  ) async {
+    final education = _EducationController();
+    final profile = _ProfileController();
+    profile.user.value = controller.currentUser.value;
+    Get.put<EducationController>(education);
+    Get.put<ProfileController>(profile);
+
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        home: const MainNavPage(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final navBar = find.byType(NavigationBar);
+    expect(navBar, findsOneWidget);
+    expect(find.descendant(of: navBar, matching: find.text('Beranda')), findsOneWidget);
+    expect(find.descendant(of: navBar, matching: find.text('Edukasi')), findsOneWidget);
+    expect(find.descendant(of: navBar, matching: find.text('Profil')), findsOneWidget);
+    expect(find.descendant(of: navBar, matching: find.text('Konseling')), findsNothing);
+    expect(find.descendant(of: navBar, matching: find.byType(SvgPicture)), findsNWidgets(2));
+
+    await tester.tap(find.descendant(of: navBar, matching: find.text('Edukasi')));
+    await tester.pumpAndSettle();
+    expect(navigation.currentIndex.value, 1);
+
+    await tester.tap(find.descendant(of: navBar, matching: find.text('Profil')));
+    await tester.pumpAndSettle();
+    expect(navigation.currentIndex.value, 2);
+    expect(tester.takeException(), isNull);
   });
 
   if (Platform.environment['SIKERA_CAPTURE_HOME'] == '1') {
@@ -347,12 +420,13 @@ void main() {
       }
       for (final dark in [false, true]) {
         await mount(tester, height: 1100, dark: dark);
-        await tester.runAsync(
-          () => precacheImage(
-            const AssetImage('assets/logo/sikera_logo_putih.png'),
-            captureKey.currentContext!,
-          ),
-        );
+        bool imagesReady() => tester.widgetList<RawImage>(find.byType(RawImage))
+            .every((image) => image.image != null);
+        for (var attempt = 0; attempt < 100 && !imagesReady(); attempt++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+          await tester.pump();
+        }
+        expect(imagesReady(), isTrue);
         await tester.pumpAndSettle();
         final boundary =
             captureKey.currentContext!.findRenderObject()!
