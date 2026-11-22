@@ -23,6 +23,7 @@ Aplikasi ini menggabungkan materi pembelajaran, asesmen diri, pencatatan perawat
 - Shared Preferences untuk penyimpanan lokal
 - Flutter SVG untuk aset SVG
 - YouTube Iframe untuk video pembelajaran
+- Google Sign-In untuk autentikasi akun Google
 
 ## Persyaratan
 
@@ -78,10 +79,13 @@ Base URL aplikasi diatur di:
 lib/app/core/constants/api_constants.dart
 ```
 
-Nilai bawaan:
+Nilai bawaan (dapat ditimpa lewat `--dart-define=API_BASE_URL=<url>`):
 
 ```dart
-static const String baseUrl = 'https://sikera.my.id/api/v1';
+static const String baseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'https://sikera.my.id/api/v1',
+);
 ```
 
 Dokumentasi endpoint tersedia di [API_DOC.md](API_DOC.md).
@@ -113,6 +117,7 @@ lib/
 test/           Unit test dan widget test
 assets/         Logo, banner, dan ikon
 android/        Konfigurasi aplikasi Android
+ios/            Konfigurasi aplikasi iOS
 web/            Konfigurasi aplikasi web
 ```
 
