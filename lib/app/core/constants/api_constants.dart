@@ -1,9 +1,52 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstants {
   ApiConstants._();
 
-  static const String baseUrl = String.fromEnvironment(
+  static const String _apiBaseUrlDefine = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://sikera.my.id/api/v1',
+  );
+  static const String _googleAndroidClientIdDefine = String.fromEnvironment(
+    'GOOGLE_ANDROID_CLIENT_ID',
+  );
+  static const String _googleIosClientIdDefine = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+  );
+  static const String _googleClientIdDefine = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+  );
+  static const String _googleAndroidRedirectUriDefine = String.fromEnvironment(
+    'GOOGLE_ANDROID_REDIRECT_URI',
+  );
+  static const String _googleIosRedirectUriDefine = String.fromEnvironment(
+    'GOOGLE_IOS_REDIRECT_URI',
+  );
+  static const String _googleRedirectUriDefine = String.fromEnvironment(
+    'GOOGLE_REDIRECT_URI',
+  );
+
+  static String _readEnv(
+    String key, {
+    required String defineValue,
+    String fallback = '',
+  }) {
+    final trimmedDefine = defineValue.trim();
+    if (trimmedDefine.isNotEmpty) return trimmedDefine;
+
+    if (dotenv.isInitialized) {
+      final dotEnvValue = dotenv.maybeGet(key)?.trim();
+      if (dotEnvValue != null && dotEnvValue.isNotEmpty) {
+        return dotEnvValue;
+      }
+    }
+
+    return fallback;
+  }
+
+  static String get baseUrl => _readEnv(
+    'API_BASE_URL',
+    defineValue: _apiBaseUrlDefine,
+    fallback: 'https://sikera.my.id/api/v1',
   );
 
   // Auth
@@ -12,15 +55,38 @@ class ApiConstants {
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
 
-  // Google Sign-In OAuth client IDs (opsional via --dart-define)
-  static const String googleClientId = String.fromEnvironment(
-    'GOOGLE_CLIENT_ID',
-    defaultValue: '',
+  // Google OAuth 2.0 API endpoints (Authorization Code + PKCE)
+  static const String googleAuthEndpoint =
+      'https://accounts.google.com/o/oauth2/v2/auth';
+  static const String googleTokenEndpoint =
+      'https://oauth2.googleapis.com/token';
+  static const String googleRevokeEndpoint =
+      'https://oauth2.googleapis.com/revoke';
+
+  // Google Cloud OAuth 2.0 public client config (.env / --dart-define)
+  static String get googleAndroidClientId => _readEnv(
+    'GOOGLE_ANDROID_CLIENT_ID',
+    defineValue: _googleAndroidClientIdDefine,
   );
-  static const String googleServerClientId = String.fromEnvironment(
-    'GOOGLE_SERVER_CLIENT_ID',
-    defaultValue:
-        '755858406803-f3sd37akh7eleuibqcfccaapkpq2vu95.apps.googleusercontent.com',
+  static String get googleIosClientId => _readEnv(
+    'GOOGLE_IOS_CLIENT_ID',
+    defineValue: _googleIosClientIdDefine,
+  );
+  static String get googleClientId => _readEnv(
+    'GOOGLE_CLIENT_ID',
+    defineValue: _googleClientIdDefine,
+  );
+  static String get googleAndroidRedirectUri => _readEnv(
+    'GOOGLE_ANDROID_REDIRECT_URI',
+    defineValue: _googleAndroidRedirectUriDefine,
+  );
+  static String get googleIosRedirectUri => _readEnv(
+    'GOOGLE_IOS_REDIRECT_URI',
+    defineValue: _googleIosRedirectUriDefine,
+  );
+  static String get googleRedirectUri => _readEnv(
+    'GOOGLE_REDIRECT_URI',
+    defineValue: _googleRedirectUriDefine,
   );
 
   // Dashboard

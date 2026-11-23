@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:sikera/app/core/constants/api_constants.dart';
 import 'package:sikera/app/core/theme/app_theme.dart';
 import 'package:sikera/app/data/models/user_model.dart';
 import 'package:sikera/app/modules/profile/profile_controller.dart';
@@ -248,6 +249,60 @@ void main() {
     });
   }
 
+  testWidgets('Tapping the avatar opens the full profile photo', (
+    tester,
+  ) async {
+    const path = '/storage/avatars/student.png';
+    final url = Uri.parse(ApiConstants.baseUrl).resolve(path).toString();
+    final provider = NetworkImage(url);
+    final recorder = ui.PictureRecorder();
+    ui.Canvas(recorder);
+    final picture = recorder.endRecording();
+    final image = picture.toImageSync(8, 8);
+    picture.dispose();
+    PaintingBinding.instance.imageCache.putIfAbsent(
+      provider,
+      () => OneFrameImageStreamCompleter(Future.value(ImageInfo(image: image))),
+    );
+    addTearDown(() => provider.evict());
+    profile.user.value = UserModel(id: 1, name: 'Aisyah', avatar: path);
+    await mount(tester, const ProfileTab());
+    await tester.tap(find.byTooltip('Lihat avatar'));
+    await tester.pumpAndSettle();
+    final photo = tester.widget<Image>(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(photo.image, provider);
+    expect(photo.fit, BoxFit.contain);
+    expect(find.text('Foto profil gagal dimuat.'), findsNothing);
+    await tester.tap(find.text('Tutup'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('Academic and appearance text share left edges', (tester) async {
+    await mount(tester, const ProfileTab(), height: 1600);
+    double left(String text) => tester.getTopLeft(find.text(text)).dx;
+    expect(left('Informasi akademik'), left('Tampilan'));
+    for (final text in [
+      'Nomor induk mahasiswa (NIM)',
+      profile.user.value!.nim!,
+      'Program studi',
+      'Fakultas',
+      'Jenis kelamin',
+      'Gunakan tampilan dengan latar gelap.',
+    ]) {
+      expect(left(text), left('Mode gelap'));
+      expect(
+        tester.widget<Text>(find.text(text)).textAlign,
+        isNot(TextAlign.center),
+      );
+    }
+  });
+
   testWidgets('Profile theme, legal links and logout confirmation work', (
     tester,
   ) async {
@@ -284,6 +339,11 @@ void main() {
     await mount(tester, const ProfileTab());
     expect(find.text('Nama belum tersedia'), findsOneWidget);
     expect(find.text('Email belum tersedia'), findsOneWidget);
+    await tester.tap(find.byTooltip('Lihat avatar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Belum ada foto profil.'), findsOneWidget);
+    await tester.tap(find.text('Tutup'));
+    await tester.pumpAndSettle();
     expect(find.text('mhs@unib.ac.id'), findsNothing);
     profile.user.value = null;
     await tester.pumpAndSettle();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/constants/api_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_view.dart';
 import '../../data/models/user_model.dart';
@@ -48,7 +49,6 @@ class ProfileTab extends GetView<ProfileController> {
                             const SizedBox(height: 16),
                             Text(
                               'Tampilan',
-                              textAlign: TextAlign.center,
                               style: theme.textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
@@ -61,13 +61,9 @@ class ProfileTab extends GetView<ProfileController> {
                                         ? Icons.dark_mode_outlined
                                         : Icons.light_mode_outlined,
                                   ),
-                                  title: const Text(
-                                    'Mode gelap',
-                                    textAlign: TextAlign.center,
-                                  ),
+                                  title: const Text('Mode gelap'),
                                   subtitle: const Text(
                                     'Gunakan tampilan dengan latar gelap.',
-                                    textAlign: TextAlign.center,
                                   ),
                                   value: controller.isDarkMode.value,
                                   onChanged: controller.toggleTheme,
@@ -140,7 +136,6 @@ class _ProfileCard extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final name = user.name.trim();
     final email = user.email?.trim() ?? '';
-    final avatar = user.avatar?.trim() ?? '';
     final initials = name.isEmpty ? '' : name.characters.first.toUpperCase();
     final fallback = initials.isEmpty
         ? const Icon(
@@ -200,19 +195,7 @@ class _ProfileCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: theme.cardColor,
                 ),
-                child: ClipOval(
-                  child: ColoredBox(
-                    color: AppTheme.primary50,
-                    child: avatar.isEmpty
-                        ? Center(child: fallback)
-                        : Image.network(
-                            avatar,
-                            fit: BoxFit.cover,
-                            excludeFromSemantics: true,
-                            errorBuilder: (_, _, _) => Center(child: fallback),
-                          ),
-                  ),
-                ),
+                child: _AvatarButton(avatar: user.avatar, fallback: fallback),
               ),
             ],
           ),
@@ -296,6 +279,91 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
+class _AvatarButton extends StatelessWidget {
+  const _AvatarButton({required this.avatar, required this.fallback});
+
+  final String? avatar;
+  final Widget fallback;
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = avatar?.trim() ?? '';
+    final uri = raw.isEmpty ? null : Uri.tryParse(raw);
+    final url = uri == null
+        ? null
+        : Uri.parse(ApiConstants.baseUrl).resolve('/').resolveUri(uri);
+    final hasPhoto =
+        url != null &&
+        (url.scheme == 'https' || url.scheme == 'http') &&
+        url.host.isNotEmpty;
+    final colors = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: 'Lihat avatar',
+      padding: EdgeInsets.zero,
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Avatar profil'),
+          scrollable: true,
+          content: hasPhoto
+              ? SizedBox(
+                  width: 320,
+                  child: Image.network(
+                    url.toString(),
+                    height: 280,
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Foto profil',
+                    errorBuilder: (_, _, _) =>
+                        const Text('Foto profil gagal dimuat.'),
+                  ),
+                )
+              : Text(
+                  raw.isEmpty
+                      ? 'Belum ada foto profil.'
+                      : 'Foto profil gagal dimuat.',
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      ),
+      icon: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipOval(
+            child: ColoredBox(
+              color: AppTheme.primary50,
+              child: hasPhoto
+                  ? Image.network(
+                      url.toString(),
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, _, _) => Center(child: fallback),
+                    )
+                  : Center(child: fallback),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: CircleAvatar(
+              radius: 11,
+              backgroundColor: colors.primary,
+              child: Icon(
+                Icons.open_in_full,
+                size: 14,
+                color: colors.onPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AcademicDetails extends StatelessWidget {
   const _AcademicDetails({required this.user});
 
@@ -319,10 +387,10 @@ class _AcademicDetails extends StatelessWidget {
       ),
     ];
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Informasi akademik',
-          textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -331,7 +399,7 @@ class _AcademicDetails extends StatelessWidget {
         Card(
           margin: EdgeInsets.zero,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final scale = MediaQuery.textScalerOf(context);
@@ -339,50 +407,30 @@ class _AcademicDetails extends StatelessWidget {
                     ? 2
                     : 1;
                 return Wrap(
-                  alignment: WrapAlignment.center,
                   children: [
                     for (final (index, (icon, label, value)) in fields.indexed)
                       SizedBox(
                         width: constraints.maxWidth / columns,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             if (index >= columns) const Divider(height: 1),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 9,
-                                horizontal: 8,
+                            ListTile(
+                              leading: Icon(
+                                icon,
+                                color: theme.colorScheme.primary,
                               ),
-                              child: Column(
-                                children: [
-                                  Wrap(
-                                    alignment: WrapAlignment.center,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    spacing: 6,
-                                    children: [
-                                      Icon(
-                                        icon,
-                                        size: 19,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                      Text(
-                                        label,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    value != null && value.trim().isNotEmpty
-                                        ? value
-                                        : 'Belum tersedia',
-                                    textAlign: TextAlign.center,
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                              title: Text(
+                                label,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              subtitle: Text(
+                                value != null && value.trim().isNotEmpty
+                                    ? value
+                                    : 'Belum tersedia',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],

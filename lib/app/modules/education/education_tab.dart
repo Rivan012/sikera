@@ -439,8 +439,7 @@ class EducationTab extends GetView<EducationController> {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final hasBannerSource =
-                ModuleBanner.useStaticPlaceholderBanner ||
-                module.bannerImage?.trim().isNotEmpty == true;
+                module.id > 0 || module.bannerImage?.trim().isNotEmpty == true;
             final showBanner =
                 constraints.maxWidth >= 280 &&
                 MediaQuery.textScalerOf(context).scale(14) <= 18 &&
@@ -573,7 +572,7 @@ class EducationTab extends GetView<EducationController> {
                           title: module.title,
                           width: bannerWidth,
                           fit: BoxFit.cover,
-                          alignment: Alignment.topRight,
+                          alignment: Alignment.centerRight,
                           useModuleFallback: true,
                           backgroundColor: Colors.transparent,
                           borderRadius: BorderRadius.zero,

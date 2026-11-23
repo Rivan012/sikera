@@ -119,36 +119,76 @@ void main() {
   });
 
   group('ModuleBanner Widget Tests', () {
-    testWidgets('Uses temporary static placeholder banner by default', (
+    setUp(() {
+      ModuleBanner.clearCache();
+    });
+
+    testWidgets('Fetches banner from API by default and caches responses', (
       tester,
     ) async {
-      expect(ModuleBanner.useStaticPlaceholderBanner, isTrue);
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ModuleBanner(
-              moduleId: 1,
-              moduleNumber: 1,
-              height: 140,
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+      expect(ModuleBanner.useStaticPlaceholderBanner, isFalse);
+      var requestCount = 0;
+      final png = await rootBundle.load('assets/banner/banner.png');
 
-      final image = tester.widget<Image>(find.byType(Image)).image;
-      expect(image, isA<AssetImage>());
-      expect(
-        (image as AssetImage).assetName,
-        ModuleBanner.staticPlaceholderAsset,
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: ModuleBanner(
+                  moduleId: 1,
+                  moduleNumber: 1,
+                  height: 140,
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(
+            tester.widget<Image>(find.byType(Image)).image,
+            isA<MemoryImage>(),
+          );
+
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: ModuleBanner(
+                  moduleId: 1,
+                  moduleNumber: 1,
+                  height: 140,
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(
+            tester.widget<Image>(find.byType(Image)).image,
+            isA<MemoryImage>(),
+          );
+        },
+        () => MockClient((request) async {
+          requestCount++;
+          expect(
+            request.url.toString(),
+            '${ApiConstants.baseUrl}/modules/1/banner',
+          );
+          return http.Response.bytes(
+            Uint8List.sublistView(png),
+            200,
+            headers: {'content-type': 'image/png'},
+          );
+        }),
       );
+
+      expect(requestCount, 1);
     });
 
     testWidgets('Uses the module ID and displays each response format once', (
       tester,
     ) async {
-      ModuleBanner.useStaticPlaceholderBanner = false;
-      addTearDown(() => ModuleBanner.useStaticPlaceholderBanner = true);
       final requests = <String>[];
       final png = await rootBundle.load('assets/banner/banner.png');
       final jpg = await rootBundle.load('assets/icon/home/edukasi.jpg');
@@ -209,27 +249,34 @@ void main() {
     testWidgets('Renders ModuleBanner with asset fallback and overlay', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: ModuleBanner(
-              moduleId: 12,
-              bannerImage: null,
-              moduleNumber: 2,
-              title: 'Pubertas & Perubahan Tubuh',
-              height: 140,
-              overlay: Text('OVERLAY TEST'),
+      await http.runWithClient(
+        () async {
+          await tester.pumpWidget(
+            const MaterialApp(
+              home: Scaffold(
+                body: ModuleBanner(
+                  moduleId: 12,
+                  bannerImage: null,
+                  moduleNumber: 2,
+                  title: 'Pubertas & Perubahan Tubuh',
+                  height: 140,
+                  overlay: Text('OVERLAY TEST'),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+
+          expect(find.byType(ModuleBanner), findsOneWidget);
+          expect(find.text('OVERLAY TEST'), findsOneWidget);
+
+          await tester.pumpAndSettle();
+          expect(find.byType(ModuleBanner), findsOneWidget);
+          expect(find.text('OVERLAY TEST'), findsOneWidget);
+          final image = tester.widget<Image>(find.byType(Image)).image;
+          expect(image, isA<AssetImage>());
+        },
+        () => MockClient((_) async => http.Response('', 404)),
       );
-
-      expect(find.byType(ModuleBanner), findsOneWidget);
-      expect(find.text('OVERLAY TEST'), findsOneWidget);
-
-      await tester.pumpAndSettle();
-      expect(find.byType(ModuleBanner), findsOneWidget);
-      expect(find.text('OVERLAY TEST'), findsOneWidget);
     });
   });
 }

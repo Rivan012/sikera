@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-23 - Migrasi Banner Modul dan Beranda ke API
+
+### Perubahan
+1. **`ModuleBanner` (`lib/app/modules/education/widgets/module_banner.dart`)**
+   - Mengubah `ModuleBanner.useStaticPlaceholderBanner = false` sehingga Beranda (`Ruang Belajar`), tab Edukasi/Materi, dan halaman Detail Modul langsung memuat gambar banner dari API (`banner_image` / `GET /api/v1/modules/{id}/banner`) dalam format SVG, PNG, atau JPG.
+   - Menambahkan cache memori untuk banner raster (`_rasterCache`) selain SVG (`_svgCache`), meneruskan `alignment` pada `SvgPicture.string`, dan memperpanjang timeout unduhan ke 15 detik.
+2. **Kartu Ruang Belajar di Beranda (`lib/app/modules/home/home_tab.dart`)**
+   - Menampilkan banner API penuh tanpa ditutupi overlay gradasi statis `#D0EDF5`, dengan footer progres dan tombol aksi yang mengikuti tema terang/gelap.
+3. **Kartu Modul di Tab Edukasi/Materi (`lib/app/modules/education/education_tab.dart`)**
+   - Menampilkan `ModuleBanner` dari API untuk seluruh modul dengan ID valid (termasuk fallback endpoint `/api/v1/modules/{id}/banner`).
+
 ## 2026-11-21 - Penggantian Sementara Semua Banner Modul dengan Aset Statis
 
 ### Konteks

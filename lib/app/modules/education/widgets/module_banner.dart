@@ -7,10 +7,14 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ModuleBanner extends StatefulWidget {
-  // TODO(api-banner): Ubah menjadi `false` setelah endpoint banner modul dari API
-  // sudah menyediakan gambar final untuk tiap modul. Lihat catatan di `chagelog.md`.
-  static bool useStaticPlaceholderBanner = true;
+  static bool useStaticPlaceholderBanner = false;
   static const String staticPlaceholderAsset = 'assets/banner/banner.png';
+
+  @visibleForTesting
+  static void clearCache() {
+    _ModuleBannerState._svgCache.clear();
+    _ModuleBannerState._rasterCache.clear();
+  }
 
   final String? bannerImage;
   final int moduleId;
@@ -36,7 +40,7 @@ class ModuleBanner extends StatefulWidget {
     this.width,
     this.borderRadius,
     this.fit = BoxFit.cover,
-    this.alignment = Alignment.topCenter,
+    this.alignment = Alignment.center,
     this.useModuleFallback = false,
     this.overlay,
     this.bannerKey,
@@ -77,6 +81,8 @@ class ModuleBanner extends StatefulWidget {
 
 class _ModuleBannerState extends State<ModuleBanner> {
   static final Map<String, String> _svgCache = {};
+  static final Map<String, Uint8List> _rasterCache = {};
+
   String? _svgString;
   Uint8List? _rasterBytes;
   bool _isLoading = true;
@@ -85,7 +91,7 @@ class _ModuleBannerState extends State<ModuleBanner> {
   @override
   void initState() {
     super.initState();
-    _loadBanner();
+    _loadBanner(fromUpdate: false);
   }
 
   @override
@@ -93,35 +99,46 @@ class _ModuleBannerState extends State<ModuleBanner> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.bannerImage != widget.bannerImage ||
         oldWidget.moduleId != widget.moduleId) {
-      _loadBanner();
+      _loadBanner(fromUpdate: true);
     }
   }
 
-  Future<void> _loadBanner() async {
+  Future<void> _loadBanner({required bool fromUpdate}) async {
     if (ModuleBanner.useStaticPlaceholderBanner) {
       _isLoading = false;
+      if (fromUpdate && mounted) setState(() {});
       return;
     }
 
     final url = ModuleBanner.resolveUrl(widget.bannerImage, widget.moduleId);
     _activeUrl = url;
 
+    final cachedSvg = _svgCache[url];
+    final cachedRaster = _rasterCache[url];
+    if (cachedSvg != null || cachedRaster != null) {
+      _svgString = cachedSvg;
+      _rasterBytes = cachedRaster;
+      _isLoading = false;
+      if (fromUpdate && mounted) setState(() {});
+      return;
+    }
+
+    _svgString = null;
     _rasterBytes = null;
-    _svgString = _svgCache[url];
-    _isLoading = _svgString == null;
-    if (!_isLoading) return;
+    _isLoading = true;
+    if (fromUpdate && mounted) setState(() {});
 
     try {
       final response = await http
           .get(
             Uri.parse(url),
-            headers: {'Accept': 'image/svg+xml, image/*, */*'},
+            headers: const {'Accept': 'image/svg+xml, image/*, */*'},
           )
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 15));
 
       if (!mounted || _activeUrl != url) return;
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         final mime = response.headers['content-type']
             ?.split(';')
             .first
@@ -139,12 +156,15 @@ class _ModuleBannerState extends State<ModuleBanner> {
           _svgCache[url] = _svgString!;
         } else {
           _rasterBytes = bytes;
+          _rasterCache[url] = bytes;
         }
       }
     } catch (_) {
       if (!mounted || _activeUrl != url) return;
     }
-    setState(() => _isLoading = false);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -166,6 +186,7 @@ class _ModuleBannerState extends State<ModuleBanner> {
       imageWidget = SvgPicture.string(
         _svgString!,
         fit: widget.fit,
+        alignment: widget.alignment,
         width: widget.width ?? double.infinity,
         height: widget.height,
         errorBuilder: (context, error, stackTrace) => _buildFallback(context),
@@ -240,15 +261,22 @@ class _ModuleBannerState extends State<ModuleBanner> {
 
   Widget _buildModuleFallback(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final compact = (widget.height ?? 160) < 150;
+    final enlargedText = MediaQuery.textScalerOf(context).scale(16) > 22;
     return Container(
       color: isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: compact ? 10 : 14,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             'Modul ${widget.moduleNumber}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: isDark
                   ? AppTheme.textSecondaryDark
@@ -258,18 +286,20 @@ class _ModuleBannerState extends State<ModuleBanner> {
             ),
           ),
           if (widget.title != null && widget.title!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              widget.title!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isDark
-                    ? AppTheme.textPrimaryDark
-                    : AppTheme.textPrimaryLight,
-                fontSize: 16,
-                height: 1.3,
-                fontWeight: FontWeight.w700,
+            SizedBox(height: compact ? 4 : 6),
+            Flexible(
+              child: Text(
+                widget.title!,
+                maxLines: enlargedText ? 1 : 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark
+                      ? AppTheme.textPrimaryDark
+                      : AppTheme.textPrimaryLight,
+                  fontSize: 16,
+                  height: 1.25,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],

@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,25 +19,53 @@ import 'package:sikera/app/modules/auth/register/register_controller.dart';
 import 'package:sikera/app/modules/auth/register/register_page.dart';
 import 'package:sikera/app/routes/app_pages.dart';
 
-class _FakeGoogleAdapter implements GoogleSignInAdapter {
-  final Future<String?> Function() onAuthenticate;
-  int signOutCalls = 0;
+class _FakeBrowserAdapter implements GoogleOAuthBrowserAdapter {
+  final Future<String> Function({
+    required Uri authorizationUri,
+    required String callbackUrlScheme,
+    required Uri redirectUri,
+  })
+  onAuthenticate;
 
-  _FakeGoogleAdapter(this.onAuthenticate);
+  _FakeBrowserAdapter(this.onAuthenticate);
 
   @override
-  Future<String?> authenticate() => onAuthenticate();
-
-  @override
-  Future<void> signOut() async {
-    signOutCalls++;
+  Future<String> authenticate({
+    required Uri authorizationUri,
+    required String callbackUrlScheme,
+    required Uri redirectUri,
+  }) {
+    return onAuthenticate(
+      authorizationUri: authorizationUri,
+      callbackUrlScheme: callbackUrlScheme,
+      redirectUri: redirectUri,
+    );
   }
 }
 
+String _buildFakeJwt(Map<String, dynamic> payload) {
+  final header = base64UrlEncode(
+    utf8.encode(jsonEncode({'alg': 'RS256', 'typ': 'JWT'})),
+  ).replaceAll('=', '');
+  final body = base64UrlEncode(
+    utf8.encode(jsonEncode(payload)),
+  ).replaceAll('=', '');
+  return '$header.$body.fake-signature';
+}
+
 void main() {
+  const androidClientId = '1234567890-androidapp.apps.googleusercontent.com';
+  const expectedDerivedScheme =
+      'com.googleusercontent.apps.1234567890-androidapp';
+  const expectedDerivedRedirectUri = '$expectedDerivedScheme:/oauth2redirect';
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await StorageService.init();
+    dotenv.loadFromString(
+      envString: 'GOOGLE_ANDROID_CLIENT_ID=$androidClientId\n',
+      isOptional: true,
+    );
     Get.testMode = true;
     Get.put(LoginController());
     Get.put(RegisterController());
@@ -42,6 +73,7 @@ void main() {
 
   tearDown(() {
     GoogleAuthService.resetAdapter();
+    dotenv.clean();
     Get.reset();
   });
 
@@ -94,36 +126,268 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('GoogleAuthService', () {
-    test('posts only the ID token to the normal login endpoint', () async {
-      GoogleAuthService.adapter = _FakeGoogleAdapter(
-        () async => 'valid-id-token-123',
+  group('GoogleAuthService (Direct Google OAuth 2.0 + PKCE)', () {
+    test('PkcePair generates RFC 7636 compliant S256 verifier & challenge', () {
+      final pair = PkcePair.generate();
+      expect(pair.codeVerifier.length, greaterThanOrEqualTo(43));
+      expect(pair.codeVerifier.contains('='), isFalse);
+      expect(pair.codeChallenge.contains('='), isFalse);
+
+      final recomputed = base64UrlEncode(
+        sha256.convert(utf8.encode(pair.codeVerifier)).bytes,
+      ).replaceAll('=', '');
+      expect(pair.codeChallenge, recomputed);
+    });
+
+    test('resolveConfig derives reversed client ID redirect URI from .env', () {
+      final config = GoogleAuthService.resolveConfig();
+      expect(config, isNotNull);
+      expect(config!.clientId, androidClientId);
+      expect(config.redirectUri, expectedDerivedRedirectUri);
+      expect(config.callbackUrlScheme, expectedDerivedScheme);
+    });
+
+    test('resolveConfig honors explicit GOOGLE_ANDROID_REDIRECT_URI', () {
+      dotenv.loadFromString(
+        envString:
+            'GOOGLE_ANDROID_CLIENT_ID=$androidClientId\n'
+            'GOOGLE_ANDROID_REDIRECT_URI=com.sikera.app.sikera:/oauth2redirect\n',
+        isOptional: true,
       );
 
-      late Uri capturedUrl;
-      late Map<String, dynamic> capturedBody;
+      final config = GoogleAuthService.resolveConfig();
+      expect(config, isNotNull);
+      expect(config!.redirectUri, 'com.sikera.app.sikera:/oauth2redirect');
+      expect(config.callbackUrlScheme, 'com.sikera.app.sikera');
+    });
+
+    test('resolveConfig uses GOOGLE_IOS_CLIENT_ID on iOS', () {
+      const iosClientId = '999888777-iosapp.apps.googleusercontent.com';
+      dotenv.loadFromString(
+        envString: 'GOOGLE_IOS_CLIENT_ID=$iosClientId\n',
+        isOptional: true,
+      );
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        final config = GoogleAuthService.resolveConfig();
+        expect(config, isNotNull);
+        expect(config!.clientId, iosClientId);
+        expect(
+          config.redirectUri,
+          'com.googleusercontent.apps.999888777-iosapp:/oauth2redirect',
+        );
+        expect(
+          config.callbackUrlScheme,
+          'com.googleusercontent.apps.999888777-iosapp',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
+    test('returns config error when .env has no Google Client ID', () async {
+      dotenv.loadFromString(envString: '', isOptional: true);
+
+      final result = await GoogleAuthService.signIn();
+      expect(result.success, isFalse);
+      expect(result.canceled, isFalse);
+      expect(result.message, contains('.env'));
+    });
+
+    test(
+      'runs full PKCE flow to Google API then exchanges id_token with SIKERA login',
+      () async {
+        late Uri capturedAuthUri;
+        late String capturedCallbackScheme;
+        late Map<String, String> capturedTokenBody;
+        late Uri capturedLoginUrl;
+        late Map<String, dynamic> capturedLoginBody;
+        String? capturedJwt;
+        String? revokedToken;
+
+        GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+          required authorizationUri,
+          required callbackUrlScheme,
+          required redirectUri,
+        }) async {
+          capturedAuthUri = authorizationUri;
+          capturedCallbackScheme = callbackUrlScheme;
+          final state = authorizationUri.queryParameters['state']!;
+          return '$redirectUri?code=auth-code-xyz&state=$state';
+        });
+
+        final result = await http.runWithClient(
+          () async {
+            final res = await GoogleAuthService.signIn();
+            await GoogleAuthService.signOut();
+            return res;
+          },
+          () => MockClient((request) async {
+            if (request.url.host == 'oauth2.googleapis.com' &&
+                request.url.path == '/token') {
+              expect(request.method, 'POST');
+              capturedTokenBody = Uri.splitQueryString(request.body);
+              final nonce = capturedAuthUri.queryParameters['nonce']!;
+              capturedJwt = _buildFakeJwt({
+                'aud': androidClientId,
+                'nonce': nonce,
+                'email': 'aisyah@unib.ac.id',
+              });
+              return http.Response(
+                jsonEncode({
+                  'access_token': 'ya29.google-access-token',
+                  'expires_in': 3599,
+                  'token_type': 'Bearer',
+                  'id_token': capturedJwt,
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+
+            if (request.url.host == 'oauth2.googleapis.com' &&
+                request.url.path == '/revoke') {
+              revokedToken = Uri.splitQueryString(request.body)['token'];
+              return http.Response('', 200);
+            }
+
+            expect(request.method, 'POST');
+            expect(request.headers.containsKey('Authorization'), isFalse);
+            capturedLoginUrl = request.url;
+            capturedLoginBody =
+                jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'success': true,
+                'message': 'Login berhasil!',
+                'data': {
+                  'token': '9|google-sanctum-token',
+                  'token_type': 'Bearer',
+                  'user': {
+                    'id': 42,
+                    'name': 'Aisyah Putri',
+                    'email': 'aisyah@unib.ac.id',
+                    'avatar': 'https://lh3.googleusercontent.com/avatar.png',
+                  },
+                },
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        );
+
+        expect(capturedAuthUri.host, 'accounts.google.com');
+        expect(capturedAuthUri.path, '/o/oauth2/v2/auth');
+        expect(capturedAuthUri.queryParameters['client_id'], androidClientId);
+        expect(
+          capturedAuthUri.queryParameters['redirect_uri'],
+          expectedDerivedRedirectUri,
+        );
+        expect(capturedAuthUri.queryParameters['response_type'], 'code');
+        expect(
+          capturedAuthUri.queryParameters['scope'],
+          'openid email profile',
+        );
+        expect(
+          capturedAuthUri.queryParameters['code_challenge_method'],
+          'S256',
+        );
+        expect(capturedAuthUri.queryParameters['prompt'], 'select_account');
+        expect(capturedCallbackScheme, expectedDerivedScheme);
+
+        expect(capturedTokenBody['client_id'], androidClientId);
+        expect(capturedTokenBody['code'], 'auth-code-xyz');
+        expect(capturedTokenBody['grant_type'], 'authorization_code');
+        expect(capturedTokenBody['redirect_uri'], expectedDerivedRedirectUri);
+        expect(capturedTokenBody['code_verifier'], isNotEmpty);
+        expect(capturedTokenBody.containsKey('client_secret'), isFalse);
+
+        final recomputedChallenge = base64UrlEncode(
+          sha256.convert(utf8.encode(capturedTokenBody['code_verifier']!)).bytes,
+        ).replaceAll('=', '');
+        expect(
+          capturedAuthUri.queryParameters['code_challenge'],
+          recomputedChallenge,
+        );
+
+        expect(capturedLoginUrl.path, '/api/v1/auth/login');
+        expect(capturedLoginBody, {'id_token': capturedJwt});
+        expect(revokedToken, 'ya29.google-access-token');
+
+        expect(result.success, isTrue);
+        expect(result.canceled, isFalse);
+        expect(result.token, '9|google-sanctum-token');
+        final userModel = UserModel.fromJson(result.user!);
+        expect(userModel.id, 42);
+        expect(
+          userModel.avatar,
+          'https://lh3.googleusercontent.com/avatar.png',
+        );
+      },
+    );
+
+    test('returns canceled when user closes browser auth tab', () async {
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        throw PlatformException(code: 'CANCELED', message: 'User canceled');
+      });
+
+      final result = await GoogleAuthService.signIn();
+      expect(result.success, isFalse);
+      expect(result.canceled, isTrue);
+      expect(result.message, isNull);
+    });
+
+    test('returns canceled when Google redirects with access_denied', () async {
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        return '$redirectUri?error=access_denied';
+      });
+
+      final result = await GoogleAuthService.signIn();
+      expect(result.success, isFalse);
+      expect(result.canceled, isTrue);
+    });
+
+    test('rejects callback with mismatched state parameter', () async {
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        return '$redirectUri?code=auth-code-xyz&state=tampered-state';
+      });
+
+      final result = await GoogleAuthService.signIn();
+      expect(result.success, isFalse);
+      expect(result.canceled, isFalse);
+      expect(result.message, contains('state tidak cocok'));
+    });
+
+    test('rejects ID token with mismatched nonce claim', () async {
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        final state = authorizationUri.queryParameters['state']!;
+        return '$redirectUri?code=auth-code-xyz&state=$state';
+      });
 
       final result = await http.runWithClient(
         GoogleAuthService.signIn,
         () => MockClient((request) async {
-          expect(request.method, 'POST');
-          expect(request.headers.containsKey('Authorization'), isFalse);
-          capturedUrl = request.url;
-          capturedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          expect(request.url.host, 'oauth2.googleapis.com');
           return http.Response(
             jsonEncode({
-              'success': true,
-              'message': 'Login berhasil!',
-              'data': {
-                'token': '9|google-sanctum-token',
-                'token_type': 'Bearer',
-                'user': {
-                  'id': 42,
-                  'name': 'Aisyah Putri',
-                  'email': 'aisyah@unib.ac.id',
-                  'avatar': 'https://lh3.googleusercontent.com/avatar.png',
-                },
-              },
+              'id_token': _buildFakeJwt({'nonce': 'wrong-nonce'}),
             }),
             200,
             headers: {'content-type': 'application/json'},
@@ -131,48 +395,68 @@ void main() {
         }),
       );
 
-      expect(capturedUrl.path, '/api/v1/auth/login');
-      expect(capturedBody, {'id_token': 'valid-id-token-123'});
-
-      expect(result.success, isTrue);
-      expect(result.canceled, isFalse);
-      expect(result.token, '9|google-sanctum-token');
-      final userModel = UserModel.fromJson(result.user!);
-      expect(userModel.id, 42);
-      expect(userModel.avatar, 'https://lh3.googleusercontent.com/avatar.png');
+      expect(result.success, isFalse);
+      expect(result.message, contains('nonce tidak cocok'));
     });
 
     test(
-      'returns canceled when user dismisses Google account picker',
+      'explains Web Client ID mistake when Google requires client_secret',
       () async {
-        GoogleAuthService.adapter = _FakeGoogleAdapter(
-          () async => throw const GoogleSignInException(
-            code: GoogleSignInExceptionCode.canceled,
-            description: 'User canceled',
-          ),
+        GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+          required authorizationUri,
+          required callbackUrlScheme,
+          required redirectUri,
+        }) async {
+          final state = authorizationUri.queryParameters['state']!;
+          return '$redirectUri?code=auth-code-xyz&state=$state';
+        });
+
+        final result = await http.runWithClient(
+          GoogleAuthService.signIn,
+          () => MockClient((_) async {
+            return http.Response(
+              jsonEncode({
+                'error': 'invalid_request',
+                'error_description': 'client_secret is missing.',
+              }),
+              400,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
         );
 
-        final result = await GoogleAuthService.signIn();
         expect(result.success, isFalse);
-        expect(result.canceled, isTrue);
-        expect(result.message, isNull);
+        expect(result.message, contains('client_secret'));
+        expect(result.message, contains('Android/iOS'));
       },
     );
 
     test('returns honest message when server endpoint returns 404', () async {
-      GoogleAuthService.adapter = _FakeGoogleAdapter(
-        () async => 'valid-id-token-123',
-      );
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        final state = authorizationUri.queryParameters['state']!;
+        return '$redirectUri?code=auth-code-xyz&state=$state';
+      });
 
       final result = await http.runWithClient(
         GoogleAuthService.signIn,
-        () => MockClient(
-          (_) async => http.Response(
+        () => MockClient((request) async {
+          if (request.url.host == 'oauth2.googleapis.com') {
+            return http.Response(
+              jsonEncode({'id_token': 'valid-id-token-123'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response(
             '{"message":"Not Found"}',
             404,
             headers: {'content-type': 'application/json'},
-          ),
-        ),
+          );
+        }),
       );
 
       expect(result.success, isFalse);
@@ -181,11 +465,15 @@ void main() {
     });
 
     test(
-      'returns honest message when platform does not support Google Sign-In',
+      'returns honest message when platform does not support web auth',
       () async {
-        GoogleAuthService.adapter = _FakeGoogleAdapter(
-          () async => throw UnsupportedError('Unsupported platform'),
-        );
+        GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+          required authorizationUri,
+          required callbackUrlScheme,
+          required redirectUri,
+        }) async {
+          throw UnsupportedError('Unsupported platform');
+        });
 
         final result = await GoogleAuthService.signIn();
         expect(result.success, isFalse);
@@ -250,7 +538,14 @@ void main() {
     testWidgets('LoginPage Google sign-in saves session and navigates', (
       tester,
     ) async {
-      GoogleAuthService.adapter = _FakeGoogleAdapter(() async => 'token-abc');
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        final state = authorizationUri.queryParameters['state']!;
+        return '$redirectUri?code=auth-code-123&state=$state';
+      });
 
       await mount(tester, const LoginPage());
       final googleBtn = find.byKey(const ValueKey('google-login-button'));
@@ -262,7 +557,14 @@ void main() {
           await tester.tap(googleBtn);
           await tester.pumpAndSettle();
         },
-        () => MockClient((_) async {
+        () => MockClient((request) async {
+          if (request.url.host == 'oauth2.googleapis.com') {
+            return http.Response(
+              jsonEncode({'id_token': 'token-abc'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
           return http.Response(
             jsonEncode({
               'success': true,
@@ -290,12 +592,13 @@ void main() {
     testWidgets('LoginPage Google cancel clears loading without error', (
       tester,
     ) async {
-      GoogleAuthService.adapter = _FakeGoogleAdapter(
-        () async => throw const GoogleSignInException(
-          code: GoogleSignInExceptionCode.canceled,
-          description: 'Canceled',
-        ),
-      );
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        throw PlatformException(code: 'CANCELED', message: 'Canceled');
+      });
 
       await mount(tester, const LoginPage());
       final controller = Get.find<LoginController>();
@@ -313,7 +616,14 @@ void main() {
     testWidgets('RegisterPage Google 404 shows inline accessible error', (
       tester,
     ) async {
-      GoogleAuthService.adapter = _FakeGoogleAdapter(() async => 'token-abc');
+      GoogleAuthService.browserAdapter = _FakeBrowserAdapter(({
+        required authorizationUri,
+        required callbackUrlScheme,
+        required redirectUri,
+      }) async {
+        final state = authorizationUri.queryParameters['state']!;
+        return '$redirectUri?code=auth-code-123&state=$state';
+      });
 
       await mount(tester, const RegisterPage());
       final googleBtn = find.byKey(const ValueKey('google-register-button'));
@@ -325,7 +635,14 @@ void main() {
           await tester.tap(googleBtn);
           await tester.pumpAndSettle();
         },
-        () => MockClient((_) async {
+        () => MockClient((request) async {
+          if (request.url.host == 'oauth2.googleapis.com') {
+            return http.Response(
+              jsonEncode({'id_token': 'token-abc'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
           return http.Response(
             '{"message":"Not Found"}',
             404,

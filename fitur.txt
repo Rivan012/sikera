@@ -1,0 +1,175 @@
+DAFTAR FITUR APLIKASI SIKERA (MOBILE FLUTTER)
+Versi Aplikasi : 1.0.2+3
+Platform       : Flutter (Android / iOS / Web)
+Backend API    : REST API Laravel SIKERA (/api/v1)
+
+================================================================================
+1. ALUR AWAL, LEGAL, & KEAMANAN SESI
+================================================================================
+- Splash Screen
+  * Tampilan pembuka adaptif tema terang/gelap dengan dukungan reduced motion.
+  * Routing otomatis berdasarkan status lokal: Onboarding -> Login -> Persetujuan
+    Syarat & Privasi -> Beranda.
+- Onboarding (3 Halaman)
+  * Pengenalan singkat fungsi edukasi kesehatan reproduksi, pemantauan mandiri,
+    dan ajakan masuk/daftar akun.
+- Syarat Layanan, Kebijakan Privasi, & Persetujuan (LegalGuard)
+  * Halaman baca dokumen Syarat & Ketentuan Layanan serta Kebijakan Privasi.
+  * Layar persetujuan wajib per akun sebelum masuk ke Beranda.
+- Manajemen Sesi & Error Jaringan
+  * Penyimpanan sesi login lokal (Bearer Token Sanctum & data profil pengguna).
+  * Penanganan otomatis sesi kedaluwarsa (HTTP 401 -> hapus sesi & arahkan ke Login).
+  * Tampilan status seragam untuk memuat, data kosong, dan gagal koneksi + tombol coba lagi.
+
+================================================================================
+2. AUTENTIKASI & PENDAFTARAN AKUN
+================================================================================
+- Login Email & Kata Sandi
+  * Autentikasi ke POST /api/v1/auth/login dengan validasi format email & kata sandi.
+  * Fitur tampilkan/sembunyikan kata sandi dan dukungan autofill.
+- Login & Daftar dengan Google (OAuth 2.0 + PKCE)
+  * Autentikasi langsung ke Google OAuth 2.0 API (accounts.google.com &
+    oauth2.googleapis.com/token) melalui browser sistem (Custom Tabs / ASWebAuthenticationSession)
+    tanpa client_secret (Public Client PKCE S256, validasi state & nonce).
+  * Penukaran id_token Google ke POST /api/v1/auth/login backend SIKERA untuk
+    mendapatkan token sesi Sanctum.
+  * Konfigurasi Client ID & Redirect URI dikelola lewat file .env (flutter_dotenv)
+    dengan dukungan override --dart-define.
+- Pendaftaran Mahasiswa (Manual)
+  * Formulir registrasi ke POST /api/v1/auth/register mencakup: Nama Lengkap,
+    Inisial (opsional), Usia (15-40 tahun), Jenis Kelamin (P/L), Agama, Pendidikan
+    Terakhir, NIM (opsional), Program Studi, Fakultas (opsional), Email, Kata Sandi,
+    dan Konfirmasi Kata Sandi.
+  * Validasi input lokal dan pemetaan error validasi per field dari server (HTTP 422).
+
+================================================================================
+3. NAVIGASI UTAMA (3 TAB)
+================================================================================
+Aplikasi menggunakan bottom navigation bar dengan 3 tab aktif:
+1. Beranda (HomeTab)
+2. Edukasi (EducationTab)
+3. Profil (ProfileTab)
+
+================================================================================
+4. BERANDA (HOME)
+================================================================================
+- Header SIKERA & Sapaan Personal
+  * Menampilkan nama depan pengguna yang masuk serta tombol pintas ke tab Profil.
+- Pencarian Modul Edukasi
+  * Kolom pencarian real-time untuk menyaring daftar modul berdasarkan judul dan
+    langsung membuka detail modul terkait.
+- Carousel Ruang Belajar
+  * Menampilkan banner modul langsung dari API (GET /api/v1/modules/{id}/banner
+    dalam format SVG, PNG, atau JPG) dengan cache memori.
+  * Auto-slide otomatis setiap 4 detik (menghormati pengaturan reduced motion),
+    dukungan geser (swipe) horizontal, serta tombol navigasi modul sebelumnya/berikutnya.
+  * Menampilkan jumlah modul selesai, progres submateri, persentase, progress bar,
+    dan tombol aksi dinamis ("Mulai Belajar", "Lanjutkan Belajar", "Baca Ulang Materi").
+- Jelajah Layanan
+  * Pintasan cepat ke: Edukasi, Catat Haid, dan Kalkulator IMT.
+- Pull-to-refresh untuk menyegarkan data beranda dari GET /api/v1/dashboard.
+
+================================================================================
+5. EDUKASI & MODUL PEMBELAJARAN
+================================================================================
+- Ringkasan Kemajuan Belajar (EducationTab)
+  * Indikator lingkaran progres (progress ring) rata-rata, bar progres per modul,
+    jumlah modul & submateri tuntas, serta tombol cepat lanjutkan modul aktif.
+- Daftar Modul Pembelajaran
+  * Kartu modul dari GET /api/v1/modules dilengkapi banner API (efek gradasi kanan),
+    jumlah submateri, status ("Belum dimulai", "Sedang dipelajari", "Selesai"),
+    dan progress bar.
+- Detail Modul (Alur Belajar 3 Langkah)
+  1) Langkah 1 - Pre-Test (GET & POST /api/v1/modules/{id}/pretest)
+     * Soal pilihan ganda tampil satu per satu (pager) dengan navigasi soal.
+     * Menjadi syarat pembuka akses submateri modul dan memberikan poin.
+  2) Langkah 2 - Submateri Interaktif (GET /api/v1/modules/{id}/topic/{topicId})
+     * Pembaca materi model flipbook terpaginasi dari konten HTML (navigasi tombol,
+       swipe, dan keyboard).
+     * Pemutar video pembelajaran YouTube terintegrasi (youtube_player_iframe) untuk
+       submateri yang memiliki video.
+     * Indikator status terkunci / selesai dan pencatatan progres otomatis.
+  3) Langkah 3 - Post-Test & Evaluasi N-Gain (GET & POST /api/v1/modules/{id}/posttest)
+     * Terbuka setelah seluruh submateri selesai dipelajari.
+     * Halaman hasil menampilkan skor pre-test, skor post-test, skor N-Gain,
+       kategori efektivitas, dan perolehan poin.
+
+================================================================================
+6. SELF-CARE & PEMANTAUAN MANDIRI
+================================================================================
+A. Catat Haid (PeriodPage - 4 Tab)
+- Tab Catatan (khusus akun mahasiswi login):
+  * Pencatatan tanggal mulai & selesai haid, panjang siklus, durasi, usia menarche,
+    keteraturan siklus, tingkat aliran, warna darah, konsistensi darah, skala nyeri
+    NRS (0-10), gejala, dan catatan harian (POST /api/v1/selfcare/period).
+  * Terintegrasi dengan perhitungan skor volume darah PBAC dan evaluasi nyeri
+    dismenore WaLIDD.
+- Tab Prediksi (khusus akun mahasiswi login):
+  * Perkiraan hari pertama haid berikutnya, estimasi ovulasi, jendela masa subur
+    6 hari, variasi siklus Ogino-Knaus, fase siklus saat ini, dan proyeksi siklus
+    mendatang (GET /api/v1/selfcare/period/prediction).
+- Tab Riwayat (khusus akun mahasiswi login):
+  * Daftar hingga 20 catatan haid terakhir lengkap dengan ringkasan siklus, aliran,
+    NRS, WaLIDD, PBAC, gejala, dan catatan (GET /api/v1/selfcare/period/history).
+- Tab Kalkulator Mandiri (publik, dapat digunakan tanpa login):
+  * Simulasi Siklus Haid (POST /api/v1/selfcare/period/calculate).
+  * Kalkulator Skor Volume Darah PBAC & deteksi risiko menoragia/HMB
+    (POST /api/v1/selfcare/period/pbac/calculate).
+  * Kalkulator Skor Dismenore WaLIDD (POST /api/v1/selfcare/period/walidd/calculate).
+- Panduan Perawatan (akses dari tab Kalkulator):
+  * Panduan Visual Warna Darah Haid (GET /api/v1/selfcare/guides/blood).
+  * Panduan Kebersihan Reproduksi (GET /api/v1/selfcare/guides/hygiene).
+
+B. Kalkulator Indeks Massa Tubuh / IMT (BmiPage)
+- Input berat badan (kg) dan tinggi badan (cm) untuk menghitung & menyimpan status
+  gizi (POST /api/v1/selfcare/bmi).
+- Menampilkan nilai IMT, kategori status gizi, rekomendasi medis terkait gizi dan
+  kesehatan reproduksi, serta riwayat pengukuran IMT (GET /api/v1/selfcare/bmi/history).
+
+================================================================================
+7. PROFIL & PENGATURAN
+================================================================================
+- Kartu Profil Pengguna (GET /api/v1/auth/me)
+  * Foto avatar profil (termasuk avatar dari akun Google) dengan pratinjau dialog
+    ukuran penuh, fallback inisial nama, nama lengkap, dan alamat email.
+  * Statistik Poin Belajar dan Hari Aktif (streak).
+- Informasi Akademik
+  * Menampilkan NIM, Program Studi, Fakultas, dan Jenis Kelamin.
+- Pengaturan Tampilan
+  * Sakelar Mode Gelap / Mode Terang (tersimpan lokal di perangkat).
+- Tautan Legal & Keluar Akun
+  * Akses ke Syarat Layanan dan Kebijakan Privasi.
+  * Dialog konfirmasi keluar akun: memanggil POST /api/v1/auth/logout, mencabut
+    token akses Google (best-effort revoke), dan menghapus sesi lokal.
+
+================================================================================
+8. MODUL TAMBAHAN YANG TERSEDIA DI KODEBASE (BELUM DI MENU NAVIGASI UTAMA)
+================================================================================
+Modul dan halaman berikut sudah tersedia di kode sumber & routing aplikasi, namun
+saat ini tidak ditampilkan sebagai pintasan di Beranda atau bottom navigation bar:
+- Ringkasan Self-Care (/selfcare - SelfcareTab)
+  * Ringkasan catatan haid & IMT terakhir beserta pintasan panduan darah & kebersihan.
+- Poster Visual Edukasi Kaspro (/posters, /posters/detail)
+  * Daftar dan detail poster edukasi serta pencatatan aksi unduh dan bagikan
+    (GET /posters, POST /posters/{id}/download, POST /posters/{id}/share).
+- Studi Kasus & Analisis (/cases, /cases/detail)
+  * Daftar dan detail studi kasus nyata kampus/indekos dari aspek medis dan hukum
+    UU TPKS (GET /cases, GET /cases/{id}).
+- Forum Tanya Anonim (/forum, /forum/detail, /forum/create)
+  * Daftar pertanyaan anonim, pencarian, filter topik, buat pertanyaan ke konselor,
+    detail diskusi, dan kirim balasan (GET/POST /forum, GET /forum/{id},
+    POST /forum/{id}/reply).
+- Gamifikasi Harian (TriviaPage & MythFactPage di lib/app/modules/gamification/)
+  * Implementasi halaman kuis trivia dan kartu mitos vs fakta tersedia di kode,
+    tetapi rutenya belum didaftarkan di AppPages.routes karena endpoint API mobile
+    saat ini belum mengaktifkannya.
+
+================================================================================
+9. STANDAR UI, AKSESIBILITAS, & KONFIGURASI
+================================================================================
+- Desain responsif mendukung layar ponsel sempit (320px) hingga tablet/desktop
+  (720px-1280px).
+- Dukungan tema terang dan tema gelap konsisten di seluruh layar.
+- Dukungan skala teks aksesibilitas hingga 2.0x tanpa overflow, target sentuh
+  minimal 44-48px, semantic labels, live region error, dan dukungan reduced motion.
+- Konfigurasi API & OAuth berbasis .env (flutter_dotenv) dengan template .env.example.

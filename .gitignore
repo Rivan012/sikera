@@ -46,3 +46,7 @@ app.*.map.json
 
 # Third-party cloned tools
 anti-slop/
+
+# Local environment secrets/config (use .env.example as template)
+.env
+!.env.example

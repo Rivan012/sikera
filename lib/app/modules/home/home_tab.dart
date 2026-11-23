@@ -589,7 +589,9 @@ class _LearningModulesState extends State<_LearningModules> {
                 ? const EdgeInsets.fromLTRB(18, 16, 18, 18)
                 : EdgeInsets.zero,
             decoration: BoxDecoration(
-              color: selected == null ? null : const Color(0xFFD0EDF5),
+              color: selected == null
+                  ? null
+                  : (isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight),
               gradient: selected == null
                   ? LinearGradient(
                       begin: Alignment.topLeft,
@@ -615,8 +617,8 @@ class _LearningModulesState extends State<_LearningModules> {
                     border: Border.all(
                       color: isDark
                           ? AppTheme.borderDark
-                          : const Color(0xFF7DDEF0),
-                      width: 1.2,
+                          : AppTheme.borderLight,
+                      width: 1,
                     ),
                   ),
             child: selected == null
@@ -748,8 +750,15 @@ class _LearningModulesState extends State<_LearningModules> {
     BuildContext context, {
     required DashboardModuleModel module,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final completed = module.progressPercentage == 100;
     final started = module.progressPercentage > 0;
+    final secondaryText = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondaryLight;
+    final primaryText = isDark ? AppTheme.textPrimaryDark : AppTheme.primary900;
+    final trackColor = isDark ? AppTheme.borderDark : AppTheme.primary50;
+    final progressColor = isDark ? AppTheme.primary500 : AppTheme.primary700;
 
     return Semantics(
       key: ValueKey<int>(module.id),
@@ -757,104 +766,77 @@ class _LearningModulesState extends State<_LearningModules> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final cardWidth = constraints.maxWidth;
-          final bannerHeight = cardWidth / 2.0;
-          final artworkClearance = (bannerHeight * 0.61).clamp(84.0, 220.0);
+          final bannerHeight = (cardWidth / 2.2).clamp(136.0, 220.0);
 
-          return Stack(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // TODO(api-banner): Banner modul sementara menggunakan aset statis
-              // lewat ModuleBanner. Lihat chagelog.md untuk migrasi ke API.
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: ExcludeSemantics(
-                  child: ModuleBanner(
-                    moduleId: module.id,
-                    bannerImage: module.bannerImage,
-                    moduleNumber: module.moduleNumber,
-                    title: module.title,
-                    width: cardWidth,
-                    height: bannerHeight,
-                    fit: BoxFit.fitWidth,
-                    alignment: Alignment.topCenter,
-                    backgroundColor: const Color(0xFFD0EDF5),
-                    borderRadius: BorderRadius.zero,
-                  ),
+              ExcludeSemantics(
+                child: ModuleBanner(
+                  moduleId: module.id,
+                  bannerImage: module.bannerImage,
+                  moduleNumber: module.moduleNumber,
+                  title: module.title,
+                  width: cardWidth,
+                  height: bannerHeight,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  useModuleFallback: true,
+                  borderRadius: BorderRadius.zero,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: artworkClearance),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x00D2EFF7),
-                          Color(0xFFD2EFF7),
-                          Color(0xFFD0EDF5),
-                        ],
-                        stops: [0.0, 0.16, 1.0],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 12,
+                      runSpacing: 4,
                       children: [
-                        Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 12,
-                          runSpacing: 4,
-                          children: [
-                            Text(
-                              '${module.completedTopics} dari ${module.totalTopics} submateri selesai',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondaryLight,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${module.progressPercentage}%',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppTheme.primary900,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: (module.progressPercentage / 100).clamp(0, 1),
-                          minHeight: 6,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusPill,
+                        Text(
+                          '${module.completedTopics} dari ${module.totalTopics} submateri selesai',
+                          style: TextStyle(
+                            color: secondaryText,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
-                          backgroundColor: AppTheme.surfaceLight,
-                          color: AppTheme.primary700,
-                          semanticsLabel: 'Progres belajar ${module.title}',
                         ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          key: const ValueKey('learning-banner'),
-                          onPressed: () => widget.onOpen(module),
-                          child: Text(
-                            completed
-                                ? 'Baca Ulang Materi'
-                                : !started
-                                ? 'Mulai Belajar'
-                                : 'Lanjutkan Belajar',
-                            textAlign: TextAlign.center,
+                        Text(
+                          '${module.progressPercentage}%',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: primaryText,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: (module.progressPercentage / 100).clamp(0, 1),
+                      minHeight: 6,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                      backgroundColor: trackColor,
+                      color: progressColor,
+                      semanticsLabel: 'Progres belajar ${module.title}',
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      key: const ValueKey('learning-banner'),
+                      onPressed: () => widget.onOpen(module),
+                      child: Text(
+                        completed
+                            ? 'Baca Ulang Materi'
+                            : !started
+                            ? 'Mulai Belajar'
+                            : 'Lanjutkan Belajar',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
