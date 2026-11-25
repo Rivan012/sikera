@@ -6,6 +6,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:sikera/app/core/theme/app_theme.dart';
 import 'package:sikera/app/data/models/module_model.dart';
 import 'package:sikera/app/modules/education/education_controller.dart';
@@ -115,6 +118,83 @@ void main() {
     expect(
       topicBookPages('Awal $longWord akhir').join(' '),
       'Awal $longWord akhir',
+    );
+  });
+
+  test('PDF sources preserve accompanying HTML and signed URLs', () {
+    const url = '/storage/materi.PDF?token=example';
+    for (final fields in [
+      {'pdf_url': url},
+      {'file_url': url},
+      {'content_html': url},
+      {'content_html': '<iframe src="$url"></iframe>'},
+    ]) {
+      final topic = TopicModel.fromJson(fields);
+      expect(topic.pdfUrl, url);
+      expect(topicBookPages(topic.contentHtml), isEmpty);
+    }
+    final mixed = TopicModel.fromJson({
+      'content_html': '<p>Pengantar</p><a href="$url">Unduh</a>',
+    });
+    expect(mixed.pdfUrl, url);
+    expect(topicBookPages(mixed.contentHtml), ['Pengantar']);
+    expect(TopicModel.fromJson({'file_url': '/video.mp4'}).pdfUrl, isNull);
+  });
+
+  testWidgets('A PDF retries, renders its original pages and finishes', (
+    tester,
+  ) async {
+    const url = 'https://media.example.org/materi';
+    final data = File('test/fixtures/topic-two-pages.pdf').readAsBytesSync();
+    final topic = TopicModel.fromJson({'title': 'Modul PDF', 'pdf_url': url});
+    Pdfrx.cacheDirectoryPath = Directory.systemTemp.path;
+    await tester.runAsync(() => pdfrxFlutterInitialize());
+    int calls = 0;
+    finished = 0;
+    await http.runWithClient(
+      () async {
+        await mount(tester, data: topic);
+        expect(
+          find.text('PDF materi gagal dibuka. Coba muat ulang.'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Coba Lagi'));
+        Future<void> waitFor(Finder finder) async {
+          for (var i = 0; i < 150 && finder.evaluate().isEmpty; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 30)),
+            );
+            await tester.pump(const Duration(milliseconds: 30));
+          }
+          expect(finder, findsWidgets);
+        }
+
+        Finder renderedPage(int number) => find.descendant(
+          of: find.byWidgetPredicate(
+            (widget) => widget is PdfPageView && widget.pageNumber == number,
+          ),
+          matching: find.byType(RawImage),
+        );
+        await waitFor(renderedPage(1));
+        expect(find.text('Mulai Membaca'), findsNothing);
+        expect(find.text('Halaman 1 dari 2'), findsOneWidget);
+        await tester.drag(find.byType(PageView), const Offset(-350, 0));
+        await tester.pumpAndSettle();
+        await waitFor(renderedPage(2));
+        expect(find.text('Halaman 2 dari 2'), findsOneWidget);
+        await tester.tap(find.text('Selesai Membaca'));
+        expect(finished, 1);
+        expect(calls, 2);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpAndSettle();
+      },
+      () => MockClient((request) async {
+        expect(request.url.toString(), url);
+        expect(request.headers.containsKey('Authorization'), isFalse);
+        return ++calls == 1
+            ? http.Response('', 503)
+            : http.Response.bytes(data, 200);
+      }),
     );
   });
 

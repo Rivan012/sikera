@@ -1,3 +1,5 @@
+import 'package:html/parser.dart' as html;
+
 class QuestionOption {
   final String label;
   final String text;
@@ -45,6 +47,7 @@ class TopicModel {
   final String? youtubeVideoId;
   final String? youtubeEmbedUrl;
   final String? contentHtml;
+  final String? pdfUrl;
   final bool isCompleted;
   final bool isLocked;
   final bool hasVideo;
@@ -56,24 +59,62 @@ class TopicModel {
     this.youtubeVideoId,
     this.youtubeEmbedUrl,
     this.contentHtml,
+    this.pdfUrl,
     this.isCompleted = false,
     this.isLocked = false,
     this.hasVideo = false,
   });
 
   factory TopicModel.fromJson(Map<String, dynamic> json) {
+    var content = json['content_html']?.toString();
+    var pdf = json['pdf_url']?.toString().trim() ?? '';
+    final file = json['file_url']?.toString().trim() ?? '';
+    final fileType = json['mime_type'] ?? json['content_type'];
+    if (pdf.isEmpty &&
+        (_isPdfPath(file) || fileType == 'application/pdf' || fileType == 'pdf')) {
+      pdf = file;
+    }
+    final body = content?.trim() ?? '';
+    if (!body.contains(RegExp(r'\s')) && _isPdfPath(body)) {
+      if (pdf.isEmpty) pdf = body;
+      if (pdf == body) content = null;
+    } else if (body.contains('<')) {
+      final fragment = html.parseFragment(body);
+      for (final element in fragment.querySelectorAll(
+        'a[href], iframe[src], embed[src], object[data]',
+      )) {
+        final link = (element.attributes['href'] ??
+                element.attributes['src'] ??
+                element.attributes['data']!)
+            .trim();
+        if (link.isEmpty) continue;
+        if (pdf.isEmpty &&
+            (_isPdfPath(link) || element.attributes['type'] == 'application/pdf')) {
+          pdf = link;
+        }
+        if (link == pdf) {
+          element.remove();
+          content = fragment.outerHtml;
+        }
+      }
+    }
     return TopicModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       topicCode: json['topic_code']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       youtubeVideoId: json['youtube_video_id']?.toString(),
       youtubeEmbedUrl: json['youtube_embed_url']?.toString(),
-      contentHtml: json['content_html']?.toString(),
+      contentHtml: content,
+      pdfUrl: pdf.isEmpty ? null : pdf,
       isCompleted: json['is_completed'] == true,
       isLocked: json['is_locked'] == true,
       hasVideo: json['has_video'] == true || (json['youtube_video_id'] != null && json['youtube_video_id'].toString().isNotEmpty),
     );
   }
+
+  static bool _isPdfPath(String value) =>
+      !value.contains(RegExp(r'[<>\r\n]')) &&
+      (Uri.tryParse(value)?.path.toLowerCase().endsWith('.pdf') ?? false);
 }
 
 class ModuleDetailModel {

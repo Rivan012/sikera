@@ -146,7 +146,7 @@ Semua path pada tabel berikut relatif terhadap base URL API, misalnya `/api/v1`.
 | Daftar modul | `GET /modules` | Tampilkan progres dan status pre-test/post-test yang dikembalikan server. |
 | Detail modul | `GET /modules/{id}` | Tampilkan submateri dan status akses. |
 | Pre-test modul | `GET` dan `POST /modules/{id}/pretest` | Kirim `answers` sebagai objek dengan ID soal sebagai key, misalnya `"12": "B"`. Tandai selesai setelah server mengonfirmasi response berhasil. |
-| Baca submateri | `GET /modules/{id}/topic/{topicId}` | Render `content_html` dengan renderer HTML yang membatasi konten aktif. Gunakan ID video YouTube dari response jika tersedia. |
+| Baca submateri | `GET /modules/{id}/topic/{topicId}` | Flipbook langsung menampilkan halaman pertama PDF sebagai sampul. Teks `content_html` dan video YouTube pendamping muncul setelah halaman PDF terakhir. Kirim PDF melalui `topic.pdf_url` (URL lengkap atau path dari root server). Tautan PDF di dalam HTML juga dikenali. |
 | Post-test modul | `GET` dan `POST /modules/{id}/posttest` | Kirim jawaban dengan bentuk `answers` yang sama. Tampilkan hasil dan N-Gain dari response server. |
 | Banner modul | `GET /modules/{id}/banner` | Rute publik mengirim PNG, JPG/JPEG, atau SVG sesuai berkas banner. Gunakan URL `banner_image` dari response dan jangan menambahkan ekstensi sendiri. |
 | Self-care | `GET /selfcare/summary`, `POST /selfcare/period`, `GET /selfcare/period/history`, `GET /selfcare/period/prediction`, `POST /selfcare/bmi`, `GET /selfcare/bmi/history` | Rute ini memerlukan token. |

@@ -45,6 +45,7 @@ dependencies:
   flutter_web_auth_2: ^5.1.0
   flutter_dotenv: ^6.0.2
   crypto: ^3.0.8
+  pdfrx: ^2.4.8
 dev_dependencies:
   flutter_test:
     sdk: flutter

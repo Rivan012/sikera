@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html;
+import 'package:http/http.dart' as http;
+import 'package:pdfrx/pdfrx.dart';
 
+import '../../../core/constants/api_constants.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/state_view.dart';
 import '../../../data/models/module_model.dart';
 import 'topic_video_player.dart';
 
@@ -54,7 +59,7 @@ List<String> topicBookPages(String? content) {
   return pages;
 }
 
-class TopicFlipbook extends StatefulWidget {
+class TopicFlipbook extends StatelessWidget {
   final TopicModel topic;
   final VoidCallback onFinished;
 
@@ -65,35 +70,140 @@ class TopicFlipbook extends StatefulWidget {
   });
 
   @override
-  State<TopicFlipbook> createState() => _TopicFlipbookState();
+  Widget build(BuildContext context) {
+    final source = topic.pdfUrl?.trim() ?? '';
+    if (source.isEmpty) {
+      return _BookPages(
+        key: ObjectKey(topic),
+        topic: topic,
+        onFinished: onFinished,
+      );
+    }
+    return _PdfBook(
+      key: ObjectKey(topic),
+      topic: topic,
+      onFinished: onFinished,
+    );
+  }
 }
 
-class _TopicFlipbookState extends State<TopicFlipbook> {
+class _PdfBook extends StatefulWidget {
+  const _PdfBook({super.key, required this.topic, required this.onFinished});
+
+  final TopicModel topic;
+  final VoidCallback onFinished;
+
+  @override
+  State<_PdfBook> createState() => _PdfBookState();
+}
+
+class _PdfBookState extends State<_PdfBook> {
+  PdfDocument? _document;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (_error != null) setState(() => _error = null);
+    try {
+      final base = Uri.parse(ApiConstants.baseUrl);
+      final url = base.resolve('/').resolve(widget.topic.pdfUrl!.trim());
+      if ((url.scheme != 'https' && url.scheme != 'http') ||
+          url.host.isEmpty ||
+          url.userInfo.isNotEmpty) {
+        throw const FormatException();
+      }
+      final token = url.origin == base.origin
+          ? StorageService.getToken()
+          : null;
+      final response = await http
+          .get(
+            url,
+            headers: {
+              'Accept': 'application/pdf',
+              if (token != null && token.isNotEmpty)
+                'Authorization': 'Bearer $token',
+            },
+          )
+          .timeout(const Duration(seconds: 25));
+      if (!mounted) return;
+      if (response.statusCode != 200) {
+        throw StateError('HTTP ${response.statusCode}');
+      }
+      await pdfrxFlutterInitialize();
+      final document = await PdfDocument.openData(response.bodyBytes);
+      if (!mounted) {
+        await document.dispose();
+        return;
+      }
+      setState(() => _document = document);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'PDF materi gagal dibuka. Coba muat ulang.');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _document?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final document = _document;
+    if (document == null) {
+      return StateView(
+        isLoading: _error == null,
+        loadingMessage: 'Memuat PDF materi...',
+        errorMessage: _error,
+        onRetry: _load,
+        child: const SizedBox.shrink(),
+      );
+    }
+    return _BookPages(
+      topic: widget.topic,
+      document: document,
+      onFinished: widget.onFinished,
+    );
+  }
+}
+
+class _BookPages extends StatefulWidget {
+  const _BookPages({
+    super.key,
+    required this.topic,
+    this.document,
+    required this.onFinished,
+  });
+
+  final TopicModel topic;
+  final PdfDocument? document;
+  final VoidCallback onFinished;
+
+  @override
+  State<_BookPages> createState() => _BookPagesState();
+}
+
+class _BookPagesState extends State<_BookPages> {
   final _controller = PageController();
-  late List<String> _pages;
+  late final List<String> _pages = topicBookPages(widget.topic.contentHtml);
   int _currentPage = 0;
 
   bool get _hasVideo =>
       (widget.topic.youtubeVideoId?.trim().isNotEmpty ?? false) ||
       (widget.topic.youtubeEmbedUrl?.trim().isNotEmpty ?? false);
+  int get _pdfPages => widget.document?.pages.length ?? 0;
+  int get _textStart => _pdfPages == 0 ? 1 : _pdfPages;
   int get _pageCount =>
-      1 + (_pages.isEmpty ? 1 : _pages.length) + (_hasVideo ? 1 : 0);
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = topicBookPages(widget.topic.contentHtml);
-  }
-
-  @override
-  void didUpdateWidget(covariant TopicFlipbook oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.topic != widget.topic) {
-      _pages = topicBookPages(widget.topic.contentHtml);
-      _currentPage = 0;
-      if (_controller.hasClients) _controller.jumpToPage(0);
-    }
-  }
+      _textStart +
+      (_pdfPages == 0 && _pages.isEmpty ? 1 : _pages.length) +
+      (_hasVideo ? 1 : 0);
 
   @override
   void dispose() {
@@ -207,8 +317,27 @@ class _TopicFlipbookState extends State<TopicFlipbook> {
                           allowImplicitScrolling: true,
                           onPageChanged: (page) =>
                               setState(() => _currentPage = page),
-                          itemBuilder: (context, index) =>
-                              _buildPage(context, index),
+                          itemBuilder: (context, index) {
+                            final page = _buildPage(context, index);
+                            if (MediaQuery.disableAnimationsOf(context)) {
+                              return page;
+                            }
+                            return AnimatedBuilder(
+                              animation: _controller,
+                              child: page,
+                              builder: (_, child) {
+                                final turn = ((_controller.page ?? 0) - index)
+                                    .clamp(0.0, 1.0);
+                                return Transform(
+                                  alignment: Alignment.centerLeft,
+                                  transform: Matrix4.identity()
+                                    ..setEntry(3, 2, 0.001)
+                                    ..rotateY(-turn * 1.2),
+                                  child: child,
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
                     ),
@@ -278,9 +407,30 @@ class _TopicFlipbookState extends State<TopicFlipbook> {
   Widget _buildPage(BuildContext context, int index) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isCover = index == 0;
+    final isCover = _pdfPages == 0 && index == 0;
     final isVideo = _hasVideo && index == _pageCount - 1;
     final isLast = index == _pageCount - 1;
+    if (index < _pdfPages) {
+      final pdfPage = index + 1;
+      return Column(
+        children: [
+          Expanded(
+            child: Semantics(
+              label: 'Halaman PDF $pdfPage dari $_pdfPages',
+              child: PdfPageView(
+                document: widget.document,
+                pageNumber: pdfPage,
+              ),
+            ),
+          ),
+          if (isLast)
+            FilledButton(
+              onPressed: widget.onFinished,
+              child: const Text('Selesai Membaca'),
+            ),
+        ],
+      );
+    }
     final accent = isDark ? AppTheme.primary200 : AppTheme.primary700;
     final secondary = isDark
         ? AppTheme.textSecondaryDark
@@ -410,7 +560,7 @@ class _TopicFlipbookState extends State<TopicFlipbook> {
                         ? 'Video pembelajaran'
                         : (_pages.isEmpty
                               ? 'Konten materi'
-                              : 'Bacaan $index dari ${_pages.length}'),
+                              : 'Bacaan ${index - _textStart + 1} dari ${_pages.length}'),
                     style: TextStyle(
                       color: accent,
                       fontSize: 13,
@@ -454,7 +604,7 @@ class _TopicFlipbookState extends State<TopicFlipbook> {
                         for (final paragraph
                             in (_pages.isEmpty
                                 ? ['Isi materi belum tersedia.']
-                                : _pages[index - 1].split('\n\n')))
+                                : _pages[index - _textStart].split('\n\n')))
                           Padding(
                             padding: const EdgeInsets.only(bottom: 18),
                             child: Text(
