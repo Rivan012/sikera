@@ -6,6 +6,7 @@ import '../../core/services/google_auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../data/models/user_model.dart';
 import '../../routes/app_pages.dart';
+import '../main_nav/main_nav_controller.dart';
 
 class ProfileController extends GetxController {
   final isLoading = false.obs;
@@ -49,6 +50,9 @@ class ProfileController extends GetxController {
             ? map['user'] as Map<String, dynamic>
             : map;
         user.value = UserModel.fromJson(target);
+        if (Get.isRegistered<MainNavController>()) {
+          Get.find<MainNavController>().syncUserRole(user.value);
+        }
       }
     } else {
       if (user.value == null) {

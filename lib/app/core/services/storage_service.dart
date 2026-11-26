@@ -95,4 +95,33 @@ class StorageService {
   }
 
   static bool get hasToken => getToken() != null && getToken()!.isNotEmpty;
+
+  static String _scopedKey(String prefix) {
+    final id = currentAccountId ?? 'guest';
+    return '${prefix}_$id';
+  }
+
+  static DateTime? getAllModulesCompletedAt() {
+    final raw = _prefs?.getString(_scopedKey('all_modules_completed_at'));
+    if (raw == null || raw.trim().isEmpty) return null;
+    return DateTime.tryParse(raw)?.toLocal();
+  }
+
+  static Future<void> setAllModulesCompletedAt(DateTime timestamp) async {
+    await _prefs?.setString(
+      _scopedKey('all_modules_completed_at'),
+      timestamp.toUtc().toIso8601String(),
+    );
+  }
+
+  static Future<void> clearAllModulesCompletedAt() async {
+    await _prefs?.remove(_scopedKey('all_modules_completed_at'));
+  }
+
+  static bool get globalPosttestCompleted =>
+      _prefs?.getBool(_scopedKey('global_posttest_completed')) ?? false;
+
+  static Future<void> setGlobalPosttestCompleted(bool completed) async {
+    await _prefs?.setBool(_scopedKey('global_posttest_completed'), completed);
+  }
 }

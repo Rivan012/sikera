@@ -101,6 +101,19 @@ class ApiConstants {
       '/modules/$moduleId/topic/$topicId';
   static String posttest(int id) => '/modules/$id/posttest';
 
+  // Global Post-Test (terbuka 3 hari setelah semua modul selesai)
+  static const String globalPosttest = '/posttest';
+  static const String globalPosttestStatus = '/posttest/status';
+
+  // Admin: Kelola Pre-Test (per modul) & Post-Test (terpisah)
+  static String adminModulePretests(int moduleId) =>
+      '/admin/modules/$moduleId/pretest';
+  static String adminModulePretestItem(int moduleId, int questionId) =>
+      '/admin/modules/$moduleId/pretest/$questionId';
+  static const String adminPosttests = '/admin/posttest';
+  static String adminPosttestItem(int questionId) =>
+      '/admin/posttest/$questionId';
+
   // Selfcare
   static const String selfcareSummary = '/selfcare/summary';
   static const String period = '/selfcare/period';

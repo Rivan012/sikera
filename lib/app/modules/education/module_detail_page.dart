@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_view.dart';
 import '../../data/models/module_model.dart';
 import '../../routes/app_pages.dart';
 import 'education_controller.dart';
+import 'widgets/global_posttest_card.dart';
 import 'widgets/module_banner.dart';
 
-/// Halaman Detail Modul Edukasi.
-/// Menerapkan panduan antislop-layoutmobile dan flutter-build-responsive-layout:
-/// - Responsive constraint (maxWidth: 720px) terpusat.
-/// - Alur pembelajaran 3 langkah (Learning Journey): Pre-Test -> Submateri -> Post-Test.
-/// - Indikator status jujur dan jelas tanpa placeholder palsu.
-/// - Tap target minimum 48px pada setiap tombol dan kartu materi.
 class ModuleDetailPage extends StatefulWidget {
   const ModuleDetailPage({super.key});
 
@@ -33,6 +29,23 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     controller.fetchModuleDetail(moduleId);
   }
 
+  void _startPretest(int id) {
+    controller.fetchPretest(id);
+    Get.toNamed(Routes.EDUCATION_PRETEST, arguments: id)?.then((_) {
+      controller.refreshAllProgress(id);
+    });
+  }
+
+  void _startGlobalPosttest() {
+    controller.fetchGlobalPosttest();
+    Get.toNamed(
+      Routes.EDUCATION_POSTTEST,
+      arguments: const {'global': true},
+    )?.then((_) {
+      controller.refreshAllProgress(moduleId);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -41,6 +54,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
       appBar: AppBar(
         title: const Text('Detail Modul'),
         leading: IconButton(
+          tooltip: 'Kembali',
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () {
             controller.refreshAllProgress(moduleId);
@@ -53,7 +67,9 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
 
         return StateView(
           isLoading: controller.isLoading.value,
-          errorMessage: controller.errorMessage.value.isNotEmpty ? controller.errorMessage.value : null,
+          errorMessage: controller.errorMessage.value.isNotEmpty
+              ? controller.errorMessage.value
+              : null,
           isEmpty: module == null,
           emptyMessage: 'Detail modul tidak ditemukan.',
           emptyIcon: Icons.menu_book_outlined,
@@ -63,41 +79,24 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
               : RefreshIndicator(
                   color: AppTheme.primary,
                   onRefresh: () => controller.refreshAllProgress(moduleId),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 720),
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Header Banner Modul
-                            _buildModuleHeader(module, isDark),
-                            const SizedBox(height: 20),
-
-                            // Alur Belajar: Langkah 1 - Pre-Test
-                            _buildStepLabel('Langkah 1', 'Evaluasi Awal (Pre-Test)', isDark),
-                            const SizedBox(height: 8),
-                            _buildPretestCard(context, module, isDark),
-                            const SizedBox(height: 20),
-
-                            // Alur Belajar: Langkah 2 - Submateri
-                            _buildStepLabel(
-                              'Langkah 2',
-                              'Pelajari Submateri (${module.topics.where((TopicModel t) => t.isCompleted == true).length}/${module.topics.length} Selesai)',
-                              isDark,
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTopicsList(context, module, isDark),
-                            const SizedBox(height: 20),
-
-                            // Alur Belajar: Langkah 3 - Post-Test & N-Gain
-                            _buildStepLabel('Langkah 3', 'Evaluasi Akhir & N-Gain', isDark),
-                            const SizedBox(height: 8),
-                            _buildPosttestCard(context, module, isDark),
-                            const SizedBox(height: 24),
-                          ],
+                  child: SafeArea(
+                    top: false,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 720),
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 16.0,
+                          ),
+                          child: !module.hasPretest
+                              ? _buildPretestGate(context, module, isDark)
+                              : _buildUnlockedModuleContent(
+                                  context,
+                                  module,
+                                  isDark,
+                                ),
                         ),
                       ),
                     ),
@@ -105,6 +104,230 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                 ),
         );
       }),
+    );
+  }
+
+  Widget _buildPretestGate(
+    BuildContext context,
+    ModuleDetailModel module,
+    bool isDark,
+  ) {
+    final headingColor = isDark
+        ? AppTheme.textPrimaryDark
+        : AppTheme.primary900;
+    final secondaryColor = isDark
+        ? AppTheme.textSecondaryDark
+        : AppTheme.textSecondaryLight;
+    final surfaceColor = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
+    final borderColor = isDark ? AppTheme.borderDark : AppTheme.borderLight;
+    final accentColor = isDark ? AppTheme.primary200 : AppTheme.primary700;
+    final topicCount = module.topics.length;
+
+    return Column(
+      key: const ValueKey('pretest-gate-view'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          label: 'Modul ${module.moduleNumber}: ${module.title}',
+          image: true,
+          excludeSemantics: true,
+          child: ModuleBanner(
+            moduleId: module.id,
+            bannerImage: module.bannerImage,
+            moduleNumber: module.moduleNumber,
+            title: module.title,
+            useModuleFallback: true,
+            height: 165,
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
+          ),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          'Modul ${module.moduleNumber}',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: accentColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          module.title,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            height: 1.25,
+            color: headingColor,
+          ),
+        ),
+        if (module.description != null && module.description!.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            module.description!,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: secondaryColor,
+            ),
+          ),
+        ],
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            border: Border.all(color: borderColor, width: 1.2),
+            boxShadow: isDark ? null : AppTheme.cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppTheme.softAccentSurfaceDark
+                          : AppTheme.primary50,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    child: Icon(
+                      Icons.assignment_outlined,
+                      color: accentColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Pre-Test Sebelum Mengakses Materi',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: headingColor,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          topicCount > 0
+                              ? 'Kerjakan Pre-Test Modul ${module.moduleNumber} terlebih dahulu untuk membuka akses ke $topicCount submateri pada modul ini.'
+                              : 'Kerjakan Pre-Test Modul ${module.moduleNumber} terlebih dahulu sebelum mengakses materi pada modul ini.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            height: 1.5,
+                            color: secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.elevatedSurfaceDark
+                      : AppTheme.pocketSurfaceLight,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: accentColor,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Submateri akan langsung terbuka setelah Pre-Test dikumpulkan.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.4,
+                          color: secondaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton.icon(
+                key: const ValueKey('pretest-gate-start-btn'),
+                onPressed: () => _startPretest(module.id),
+                icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                label: Text(
+                  'Mulai Pre-Test Modul ${module.moduleNumber}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                key: const ValueKey('pretest-gate-back-btn'),
+                onPressed: () => Get.back(),
+                child: const Text(
+                  'Kembali ke Daftar Modul',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildUnlockedModuleContent(
+    BuildContext context,
+    ModuleDetailModel module,
+    bool isDark,
+  ) {
+    final completedCount = module.topics
+        .where((TopicModel t) => t.isCompleted == true)
+        .length;
+    final posttestStatus = controller.effectivePosttestStatus;
+    final now = controller.nowProvider();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildModuleHeader(module, isDark),
+        const SizedBox(height: 20),
+        _buildStepLabel(
+          'Daftar Submateri',
+          '$completedCount/${module.topics.length} Selesai',
+          isDark,
+        ),
+        const SizedBox(height: 10),
+        _buildTopicsList(context, module, isDark),
+        const SizedBox(height: 20),
+        _buildStepLabel(
+          'Evaluasi Akhir',
+          'Post-Test (${posttestStatus.delayDays} Hari Setelah Semua Modul)',
+          isDark,
+        ),
+        const SizedBox(height: 10),
+        GlobalPosttestCard(
+          status: posttestStatus,
+          now: now,
+          onStartPosttest: _startGlobalPosttest,
+          onViewModules: () => Get.back(),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 
@@ -124,8 +347,9 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
         .where((TopicModel t) => t.isCompleted == true)
         .length;
     final totalCount = module.topics.length;
-    final bool isFinished = module.hasPosttest;
-    final statusColor = isDark ? const Color(0xFF34D399) : AppTheme.success;
+    final bool isModuleTopicsDone =
+        totalCount > 0 && completedCount >= totalCount;
+    final statusColor = isDark ? const Color(0xFF4ADE80) : AppTheme.success;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -141,7 +365,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
             title: module.title,
             useModuleFallback: true,
             height: 165,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppTheme.radiusXl),
           ),
         ),
         Padding(
@@ -166,6 +390,27 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
               Row(
                 children: [
                   Icon(
+                    Icons.check_circle_outline_rounded,
+                    size: 18,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pre-Test modul tuntas, akses materi terbuka',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(
                     Icons.assignment_turned_in_rounded,
                     size: 18,
                     color: isDark ? AppTheme.primary500 : AppTheme.primary700,
@@ -185,7 +430,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                   ),
                 ],
               ),
-              if (isFinished) ...[
+              if (isModuleTopicsDone) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -197,7 +442,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Modul selesai',
+                        'Semua submateri modul ini selesai',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -215,109 +460,31 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
     );
   }
 
-  Widget _buildPretestCard(BuildContext context, ModuleDetailModel module, bool isDark) {
-    final bool hasPretest = module.hasPretest;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasPretest
-              ? (isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0))
-              : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-          width: 1.2,
-        ),
-        boxShadow: isDark ? null : AppTheme.cardShadow,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: hasPretest
-                    ? (isDark ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.successLight)
-                    : (isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                hasPretest ? Icons.check_circle_rounded : Icons.assignment_outlined,
-                color: hasPretest ? AppTheme.success : (isDark ? AppTheme.primary500 : AppTheme.primary700),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pre-Test Pemahaman Awal',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    hasPretest
-                        ? 'Pre-test telah tuntas. Akses seluruh materi terbuka.'
-                        : 'Kerjakan soal singkat untuk menguji pengetahuan awal.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            if (!hasPretest)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary700,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(92, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  ),
-                ),
-                onPressed: () {
-                  controller.fetchPretest(module.id);
-                  Get.toNamed(Routes.EDUCATION_PRETEST, arguments: module.id)?.then((_) {
-                    controller.refreshAllProgress(module.id);
-                  });
-                },
-                child: const Text('Mulai', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopicsList(BuildContext context, ModuleDetailModel module, bool isDark) {
+  Widget _buildTopicsList(
+    BuildContext context,
+    ModuleDetailModel module,
+    bool isDark,
+  ) {
     if (module.topics.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? AppTheme.borderDark : AppTheme.borderLight),
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          border: Border.all(
+            color: isDark ? AppTheme.borderDark : AppTheme.borderLight,
+          ),
           boxShadow: isDark ? null : AppTheme.cardShadow,
         ),
         child: Center(
           child: Text(
-            'Selesaikan Pre-Test terlebih dahulu untuk membuka daftar submateri.',
+            'Belum ada submateri yang tersedia pada modul ini.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
+              color: isDark
+                  ? AppTheme.textSecondaryDark
+                  : AppTheme.textSecondaryLight,
             ),
           ),
         ),
@@ -333,7 +500,7 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
             color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
             border: Border.all(
               color: isDone
                   ? (isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0))
@@ -345,12 +512,12 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppTheme.radiusLg),
               onTap: isLocked
                   ? () {
                       Get.snackbar(
                         'Materi Masih Terkunci',
-                        'Selesaikan Pre-Test terlebih dahulu untuk membuka submateri ini.',
+                        'Selesaikan submateri sebelumnya untuk membuka materi ini.',
                         snackPosition: SnackPosition.BOTTOM,
                         backgroundColor: AppTheme.warning,
                         colorText: Colors.white,
@@ -359,10 +526,10 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                     }
                   : () {
                       controller.fetchTopic(module.id, topic.id);
-                      Get.toNamed(Routes.EDUCATION_TOPIC, arguments: {
-                        'moduleId': module.id,
-                        'topicId': topic.id,
-                      })?.then((_) {
+                      Get.toNamed(
+                        Routes.EDUCATION_TOPIC,
+                        arguments: {'moduleId': module.id, 'topicId': topic.id},
+                      )?.then((_) {
                         controller.refreshAllProgress(module.id);
                       });
                     },
@@ -370,17 +537,22 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                 padding: const EdgeInsets.all(14.0),
                 child: Row(
                   children: [
-                    // Topic Code Container
                     Container(
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
                         color: isDone
-                            ? (isDark ? AppTheme.primary500 : AppTheme.primary900)
+                            ? (isDark
+                                  ? AppTheme.primary500
+                                  : AppTheme.primary900)
                             : (isLocked
-                                ? (isDark ? const Color(0xFF243038) : const Color(0xFFF1F5F9))
-                                : (isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50)),
-                        borderRadius: BorderRadius.circular(12),
+                                  ? (isDark
+                                        ? const Color(0xFF243038)
+                                        : const Color(0xFFF1F5F9))
+                                  : (isDark
+                                        ? AppTheme.softAccentSurfaceDark
+                                        : AppTheme.primary50)),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                       ),
                       child: Center(
                         child: Text(
@@ -391,15 +563,17 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                             color: isDone
                                 ? Colors.white
                                 : (isLocked
-                                    ? (isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight)
-                                    : (isDark ? AppTheme.primary500 : AppTheme.primary700)),
+                                      ? (isDark
+                                            ? AppTheme.textMutedDark
+                                            : AppTheme.textMutedLight)
+                                      : (isDark
+                                            ? AppTheme.primary500
+                                            : AppTheme.primary700)),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 14),
-
-                    // Topic Title & Subtitle
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,48 +584,66 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                               fontSize: 14.5,
                               fontWeight: FontWeight.w700,
                               color: isLocked
-                                  ? (isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight)
-                                  : (isDark ? AppTheme.textPrimaryDark : AppTheme.primary900),
+                                  ? (isDark
+                                        ? AppTheme.textMutedDark
+                                        : AppTheme.textMutedLight)
+                                  : (isDark
+                                        ? AppTheme.textPrimaryDark
+                                        : AppTheme.primary900),
                             ),
                           ),
                           const SizedBox(height: 3),
-                          Row(
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              if (topic.hasVideo) ...[
-                                Icon(
-                                  Icons.play_circle_outline_rounded,
-                                  size: 14,
-                                  color: isDark
-                                      ? AppTheme.primary200
-                                      : AppTheme.primary700,
+                              if (topic.hasVideo)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.play_circle_outline_rounded,
+                                      size: 14,
+                                      color: isDark
+                                          ? AppTheme.primary200
+                                          : AppTheme.primary700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Video',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? AppTheme.primary200
+                                            : AppTheme.primary700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Video · ',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark
-                                        ? AppTheme.primary200
-                                        : AppTheme.primary700,
-                                  ),
-                                ),
-                              ],
-                              Expanded(
-                                child: Text(
-                                  isDone
-                                      ? 'Selesai dipelajari'
-                                      : (isLocked ? 'Terkunci (Pre-Test belum selesai)' : 'Ketuk untuk membaca materi'),
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: isDone ? FontWeight.w700 : FontWeight.w500,
-                                    color: isDone
-                                        ? AppTheme.success
-                                        : (isLocked
-                                            ? (isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight)
-                                            : (isDark ? AppTheme.primary500 : AppTheme.primary700)),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              Text(
+                                isDone
+                                    ? 'Selesai dipelajari'
+                                    : (isLocked
+                                          ? 'Terkunci'
+                                          : 'Ketuk untuk membaca materi'),
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isDone
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isDone
+                                      ? (isDark
+                                            ? const Color(0xFF4ADE80)
+                                            : AppTheme.success)
+                                      : (isLocked
+                                            ? (isDark
+                                                  ? AppTheme.textMutedDark
+                                                  : AppTheme.textMutedLight)
+                                            : (isDark
+                                                  ? AppTheme.primary500
+                                                  : AppTheme.primary700)),
                                 ),
                               ),
                             ],
@@ -460,14 +652,30 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-
-                    // Trailing Status Icon
                     if (isDone)
-                      const Icon(Icons.check_circle_rounded, color: AppTheme.success, size: 24)
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: isDark
+                            ? const Color(0xFF4ADE80)
+                            : AppTheme.success,
+                        size: 24,
+                      )
                     else if (isLocked)
-                      Icon(Icons.lock_rounded, color: isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight, size: 20)
+                      Icon(
+                        Icons.lock_rounded,
+                        color: isDark
+                            ? AppTheme.textMutedDark
+                            : AppTheme.textMutedLight,
+                        size: 20,
+                      )
                     else
-                      Icon(Icons.play_circle_fill_rounded, color: isDark ? AppTheme.primary500 : AppTheme.primary700, size: 26),
+                      Icon(
+                        Icons.play_circle_fill_rounded,
+                        color: isDark
+                            ? AppTheme.primary500
+                            : AppTheme.primary700,
+                        size: 26,
+                      ),
                   ],
                 ),
               ),
@@ -475,101 +683,6 @@ class _ModuleDetailPageState extends State<ModuleDetailPage> {
           ),
         );
       }).toList(),
-    );
-  }
-
-  Widget _buildPosttestCard(BuildContext context, ModuleDetailModel module, bool isDark) {
-    final bool hasPosttest = module.hasPosttest;
-    final bool allTopicsDone = module.allTopicsDone;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasPosttest
-              ? (isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0))
-              : (isDark ? AppTheme.borderDark : AppTheme.borderLight),
-          width: 1.2,
-        ),
-        boxShadow: isDark ? null : AppTheme.cardShadow,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: hasPosttest
-                    ? (isDark ? AppTheme.success.withValues(alpha: 0.15) : AppTheme.successLight)
-                    : (allTopicsDone ? (isDark ? AppTheme.softAccentSurfaceDark : AppTheme.primary50) : (isDark ? const Color(0xFF243038) : const Color(0xFFF1F5F9))),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                hasPosttest
-                    ? Icons.verified_rounded
-                    : (allTopicsDone ? Icons.quiz_rounded : Icons.lock_outline_rounded),
-                color: hasPosttest
-                    ? AppTheme.success
-                    : (allTopicsDone ? (isDark ? AppTheme.primary500 : AppTheme.primary700) : (isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight)),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Post-Test & Peningkatan N-Gain',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppTheme.textPrimaryDark : AppTheme.primary900,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    hasPosttest
-                        ? 'Skor: ${module.posttestScore ?? 100}/100${module.nGain != null ? ' | N-Gain: ${module.nGain}' : ''}'
-                        : (allTopicsDone
-                            ? 'Materi tuntas! Kerjakan evaluasi akhir sekarang.'
-                            : 'Pelajari seluruh submateri untuk membuka tes.'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            if (!hasPosttest && allTopicsDone)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary700,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(92, 48),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  ),
-                ),
-                onPressed: () {
-                  controller.fetchPosttest(module.id);
-                  Get.toNamed(Routes.EDUCATION_POSTTEST, arguments: module.id)?.then((_) {
-                    controller.refreshAllProgress(module.id);
-                  });
-                },
-                child: const Text('Mulai', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              )
-            else if (!hasPosttest)
-              Icon(Icons.lock_rounded, color: isDark ? AppTheme.textMutedDark : AppTheme.textMutedLight, size: 20),
-          ],
-        ),
-      ),
     );
   }
 }

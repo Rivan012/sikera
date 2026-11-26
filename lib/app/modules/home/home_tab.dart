@@ -20,7 +20,13 @@ class HomeTab extends GetView<HomeController> {
 
   void _openTab(int index, String fallback) {
     if (Get.isRegistered<MainNavController>()) {
-      Get.find<MainNavController>().changeTab(index);
+      final nav = Get.find<MainNavController>();
+      if (nav.isAdmin.value && fallback == Routes.EDUCATION_MODULE_LIST) {
+        Get.toNamed(fallback);
+        return;
+      }
+      final targetIndex = index == 2 ? nav.profileTabIndex : index;
+      nav.changeTab(targetIndex);
     } else {
       Get.toNamed(fallback);
     }

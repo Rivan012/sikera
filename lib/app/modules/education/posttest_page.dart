@@ -10,10 +10,19 @@ class PosttestPage extends GetView<EducationController> {
 
   @override
   Widget build(BuildContext context) {
-    final moduleId = Get.arguments is int ? Get.arguments as int : 1;
+    final args = Get.arguments;
+    final bool isGlobal =
+        args == null || (args is Map && args['global'] == true);
+    final int moduleId = args is int
+        ? args
+        : (args is Map && args['moduleId'] is int
+              ? args['moduleId'] as int
+              : 1);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Post-Test Modul')),
+      appBar: AppBar(
+        title: Text(isGlobal ? 'Post-Test Akhir' : 'Post-Test Modul'),
+      ),
       body: Obx(
         () => StateView(
           isLoading: controller.isLoading.value,
@@ -22,13 +31,17 @@ class PosttestPage extends GetView<EducationController> {
               : null,
           isEmpty: controller.questions.isEmpty,
           emptyMessage: 'Soal Post-Test belum tersedia.',
-          onRetry: () => controller.fetchPosttest(moduleId),
+          onRetry: () => isGlobal
+              ? controller.fetchGlobalPosttest()
+              : controller.fetchPosttest(moduleId),
           child: TestQuestionPager(
             questions: controller.questions.toList(),
             answers: Map.of(controller.answers),
             isSubmitting: controller.isSubmitting.value,
             onAnswer: (id, answer) => controller.answers[id] = answer,
-            onSubmit: () => controller.submitPosttest(moduleId),
+            onSubmit: () => isGlobal
+                ? controller.submitGlobalPosttest()
+                : controller.submitPosttest(moduleId),
           ),
         ),
       ),

@@ -2,6 +2,10 @@
 
 import 'package:get/get.dart';
 
+import '../modules/admin/admin_binding.dart';
+import '../modules/admin/admin_posttest_page.dart';
+import '../modules/admin/admin_pretest_page.dart';
+import '../modules/admin/admin_question_form_page.dart';
 import '../modules/auth/login/login_binding.dart';
 import '../modules/auth/login/login_page.dart';
 import '../modules/auth/register/register_binding.dart';
@@ -170,6 +174,21 @@ class AppPages {
       name: _Paths.FORUM_CREATE,
       page: () => const ForumCreatePage(),
       binding: ForumBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_PRETEST,
+      page: () => const AdminPretestPage(standalone: true),
+      binding: AdminBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_POSTTEST,
+      page: () => const AdminPosttestPage(standalone: true),
+      binding: AdminBinding(),
+    ),
+    GetPage(
+      name: _Paths.ADMIN_QUESTION_FORM,
+      page: () => const AdminQuestionFormPage(),
+      binding: AdminBinding(),
     ),
   ];
 }

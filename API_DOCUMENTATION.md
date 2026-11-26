@@ -79,6 +79,7 @@ Content-Type: application/json
         "id": 1,
         "name": "Aisyah Putri Maharani",
         "email": "mhs@unib.ac.id",
+        "role": "student",
         "gender": "P",
         "points": 50,
         "streak_days": 3
@@ -206,11 +207,36 @@ Content-Type: application/json
   }
   ```
 
-### 3.6. Ambil Soal Post-Test Modul
-- **Method & URL**: `GET /api/v1/modules/{id}/posttest` *(Auth Required)*
+### 3.6. Status & Soal Post-Test Akhir (3 Hari Setelah Semua Modul Selesai)
+- **Status Post-Test Akhir**: `GET /api/v1/posttest/status` *(Auth Required)*
+- **Deskripsi**: Mengambil status kelayakan Post-Test Akhir. Post-Test baru terbuka **3 hari (72 jam)** setelah mahasiswa menyelesaikan seluruh modul.
+- **Response `200 OK`**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "total_modules": 4,
+      "completed_modules": 4,
+      "all_modules_completed": true,
+      "all_modules_completed_at": "2026-11-23T08:00:00Z",
+      "available_at": "2026-11-26T08:00:00Z",
+      "unlock_delay_days": 3,
+      "is_unlocked": true,
+      "has_posttest": false,
+      "pretest_score": null,
+      "posttest_score": null,
+      "n_gain_score": null,
+      "effectiveness_category": null
+    }
+  }
+  ```
 
-### 3.7. Submit Post-Test Modul (Hitung N-Gain)
-- **Method & URL**: `POST /api/v1/modules/{id}/posttest` *(Auth Required)*
+- **Ambil Soal Post-Test Akhir**: `GET /api/v1/posttest` *(Auth Required)*
+  - Mengembalikan `403 Forbidden` jika belum semua modul tuntas atau masa tunggu 3 hari belum berakhir.
+  - Mengembalikan `200 OK` dengan `data.questions` jika sudah terbuka.
+
+### 3.7. Submit Post-Test Akhir (Hitung N-Gain)
+- **Method & URL**: `POST /api/v1/posttest` *(Auth Required)*
 - **Request Body**:
   ```json
   {
@@ -233,6 +259,57 @@ Content-Type: application/json
     }
   }
   ```
+
+> **Kompatibilitas**: Endpoint legacy per-modul `GET/POST /api/v1/modules/{id}/posttest` tetap didukung untuk kompatibilitas mundur, namun alur aplikasi utama menggunakan Post-Test Akhir global setelah 3 hari penyelesaian semua modul.
+
+---
+
+## 3B. Admin: Kelola Pre-Test (Per Modul) & Kelola Post-Test (Terpisah)
+
+Semua rute admin memerlukan akun dengan `user.role = "admin"`.
+
+### 3B.1. Kelola Pre-Test Berdasarkan Modul (`/api/v1/admin/modules/{moduleId}/pretest`)
+- `GET /api/v1/admin/modules/{moduleId}/pretest` &rarr; Daftar soal Pre-Test untuk modul tertentu.
+- `POST /api/v1/admin/modules/{moduleId}/pretest` &rarr; Tambah soal Pre-Test baru pada modul tertentu.
+- `PUT /api/v1/admin/modules/{moduleId}/pretest/{questionId}` &rarr; Perbarui soal Pre-Test.
+- `DELETE /api/v1/admin/modules/{moduleId}/pretest/{questionId}` &rarr; Hapus soal Pre-Test.
+
+**Request Body (`POST` / `PUT`)**:
+```json
+{
+  "module_id": 1,
+  "type": "pretest",
+  "question_text": "Arah yang benar saat membersihkan organ reproduksi adalah...",
+  "options": [
+    { "label": "A", "text": "Dari belakang ke depan" },
+    { "label": "B", "text": "Dari depan ke belakang" },
+    { "label": "C", "text": "Tidak ada aturan khusus" },
+    { "label": "D", "text": "Hanya saat mandi pagi" }
+  ],
+  "correct_answer": "B"
+}
+```
+
+### 3B.2. Kelola Post-Test Akhir (`/api/v1/admin/posttest`)
+- `GET /api/v1/admin/posttest` &rarr; Daftar seluruh soal Post-Test Akhir beserta `unlock_delay_days` (default `3`).
+- `POST /api/v1/admin/posttest` &rarr; Tambah soal Post-Test baru.
+- `PUT /api/v1/admin/posttest/{questionId}` &rarr; Perbarui soal Post-Test.
+- `DELETE /api/v1/admin/posttest/{questionId}` &rarr; Hapus soal Post-Test.
+
+**Request Body (`POST` / `PUT`)**:
+```json
+{
+  "type": "posttest",
+  "question_text": "Langkah utama menjaga higienitas saat menstruasi adalah...",
+  "options": [
+    { "label": "A", "text": "Mengganti pembalut setiap 3-4 jam sekali" },
+    { "label": "B", "text": "Menggunakan pembalut seharian penuh" },
+    { "label": "C", "text": "Menghindari air bersih" },
+    { "label": "D", "text": "Memakai sabun berpewangi keras" }
+  ],
+  "correct_answer": "A"
+}
+```
 
 ---
 

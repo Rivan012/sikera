@@ -32,6 +32,9 @@ abstract class Routes {
   static const FORUM_CREATE = _Paths.FORUM_CREATE;
   static const TRIVIA = _Paths.TRIVIA;
   static const MYTH_FACT = _Paths.MYTH_FACT;
+  static const ADMIN_PRETEST = _Paths.ADMIN_PRETEST;
+  static const ADMIN_POSTTEST = _Paths.ADMIN_POSTTEST;
+  static const ADMIN_QUESTION_FORM = _Paths.ADMIN_QUESTION_FORM;
 }
 
 abstract class _Paths {
@@ -64,4 +67,7 @@ abstract class _Paths {
   static const FORUM_CREATE = '/forum/create';
   static const TRIVIA = '/gamification/trivia';
   static const MYTH_FACT = '/gamification/myth-fact';
+  static const ADMIN_PRETEST = '/admin/pretest';
+  static const ADMIN_POSTTEST = '/admin/posttest';
+  static const ADMIN_QUESTION_FORM = '/admin/question-form';
 }

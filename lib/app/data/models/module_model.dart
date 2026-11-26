@@ -192,3 +192,168 @@ class ModuleDetailModel {
     );
   }
 }
+
+enum PosttestAvailability {
+  lockedIncompleteModules,
+  waitingCooldown,
+  available,
+  completed,
+}
+
+class GlobalPosttestStatus {
+  static const int requiredDelayDays = 3;
+
+  final int totalModules;
+  final int completedModules;
+  final bool allModulesCompleted;
+  final DateTime? allModulesCompletedAt;
+  final DateTime? availableAt;
+  final bool isUnlocked;
+  final bool hasCompletedPosttest;
+  final int? pretestScore;
+  final int? posttestScore;
+  final double? nGainScore;
+  final String? effectivenessCategory;
+  final int delayDays;
+
+  const GlobalPosttestStatus({
+    this.totalModules = 0,
+    this.completedModules = 0,
+    this.allModulesCompleted = false,
+    this.allModulesCompletedAt,
+    this.availableAt,
+    this.isUnlocked = false,
+    this.hasCompletedPosttest = false,
+    this.pretestScore,
+    this.posttestScore,
+    this.nGainScore,
+    this.effectivenessCategory,
+    this.delayDays = requiredDelayDays,
+  });
+
+  DateTime? get effectiveAvailableAt =>
+      availableAt ?? allModulesCompletedAt?.add(Duration(days: delayDays));
+
+  PosttestAvailability availabilityAt(DateTime now) {
+    if (hasCompletedPosttest) return PosttestAvailability.completed;
+    if (!allModulesCompleted) {
+      return PosttestAvailability.lockedIncompleteModules;
+    }
+    if (isUnlocked) return PosttestAvailability.available;
+    final unlockAt = effectiveAvailableAt;
+    if (unlockAt != null && !now.isBefore(unlockAt)) {
+      return PosttestAvailability.available;
+    }
+    return PosttestAvailability.waitingCooldown;
+  }
+
+  Duration remainingDuration(DateTime now) {
+    final unlockAt = effectiveAvailableAt;
+    if (unlockAt == null) return Duration(days: delayDays);
+    final diff = unlockAt.difference(now);
+    return diff.isNegative ? Duration.zero : diff;
+  }
+
+  String formatRemaining(DateTime now) {
+    final diff = remainingDuration(now);
+    if (diff == Duration.zero) return 'Siap dikerjakan';
+    final days = diff.inDays;
+    final hours = diff.inHours.remainder(24);
+    final minutes = diff.inMinutes.remainder(60);
+    if (days > 0) {
+      return hours > 0 ? '$days hari $hours jam lagi' : '$days hari lagi';
+    }
+    if (hours > 0) {
+      return minutes > 0 ? '$hours jam $minutes menit lagi' : '$hours jam lagi';
+    }
+    if (minutes > 0) return '$minutes menit lagi';
+    return 'Kurang dari 1 menit lagi';
+  }
+
+  GlobalPosttestStatus copyWith({
+    int? totalModules,
+    int? completedModules,
+    bool? allModulesCompleted,
+    DateTime? allModulesCompletedAt,
+    DateTime? availableAt,
+    bool? isUnlocked,
+    bool? hasCompletedPosttest,
+    int? pretestScore,
+    int? posttestScore,
+    double? nGainScore,
+    String? effectivenessCategory,
+    int? delayDays,
+  }) {
+    return GlobalPosttestStatus(
+      totalModules: totalModules ?? this.totalModules,
+      completedModules: completedModules ?? this.completedModules,
+      allModulesCompleted: allModulesCompleted ?? this.allModulesCompleted,
+      allModulesCompletedAt:
+          allModulesCompletedAt ?? this.allModulesCompletedAt,
+      availableAt: availableAt ?? this.availableAt,
+      isUnlocked: isUnlocked ?? this.isUnlocked,
+      hasCompletedPosttest: hasCompletedPosttest ?? this.hasCompletedPosttest,
+      pretestScore: pretestScore ?? this.pretestScore,
+      posttestScore: posttestScore ?? this.posttestScore,
+      nGainScore: nGainScore ?? this.nGainScore,
+      effectivenessCategory:
+          effectivenessCategory ?? this.effectivenessCategory,
+      delayDays: delayDays ?? this.delayDays,
+    );
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty) return null;
+    return DateTime.tryParse(text)?.toLocal();
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  factory GlobalPosttestStatus.fromJson(Map<String, dynamic> json) {
+    final completedAt = _parseDate(
+      json['all_modules_completed_at'] ?? json['completed_at'],
+    );
+    final availableAt = _parseDate(
+      json['available_at'] ?? json['posttest_available_at'] ?? json['unlock_at'],
+    );
+    final total = _parseInt(json['total_modules']) ?? 0;
+    final completed = _parseInt(json['completed_modules']) ?? 0;
+    final allCompleted =
+        json['all_modules_completed'] == true ||
+        (total > 0 && completed >= total);
+    final unlocked =
+        json['is_unlocked'] == true || json['can_take_posttest'] == true;
+    final done =
+        json['has_posttest'] == true ||
+        json['has_completed_posttest'] == true ||
+        json['is_completed'] == true;
+
+    return GlobalPosttestStatus(
+      totalModules: total,
+      completedModules: completed,
+      allModulesCompleted: allCompleted,
+      allModulesCompletedAt: completedAt,
+      availableAt: availableAt,
+      isUnlocked: unlocked,
+      hasCompletedPosttest: done,
+      pretestScore: _parseInt(json['pretest_score']),
+      posttestScore: _parseInt(json['posttest_score'] ?? json['score']),
+      nGainScore: _parseDouble(json['n_gain_score'] ?? json['n_gain']),
+      effectivenessCategory: json['effectiveness_category']?.toString(),
+      delayDays:
+          _parseInt(json['unlock_delay_days'] ?? json['delay_days']) ??
+          requiredDelayDays,
+    );
+  }
+}

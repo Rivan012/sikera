@@ -8,6 +8,7 @@ import '../../core/widgets/state_view.dart';
 import '../../data/models/dashboard_model.dart';
 import '../../routes/app_pages.dart';
 import 'education_controller.dart';
+import 'widgets/global_posttest_card.dart';
 import 'widgets/module_banner.dart';
 
 class EducationTab extends GetView<EducationController> {
@@ -27,13 +28,17 @@ class EducationTab extends GetView<EducationController> {
       body: Obx(() {
         final modules = controller.modules;
         final completed = modules
-            .where((m) => m.progressPercentage >= 100)
+            .where((m) => m.isTopicsCompleted)
             .length;
         final progress = modules.isEmpty
             ? 0
             : (modules.fold<int>(0, (sum, m) => sum + m.progressPercentage) /
                       modules.length)
                   .round();
+        final posttestStatus = controller.effectivePosttestStatus;
+        final now = controller.nowProvider();
+        final promotePosttest =
+            modules.isNotEmpty && posttestStatus.allModulesCompleted;
 
         return StateView(
           isLoading: controller.isLoading.value,
@@ -53,7 +58,7 @@ class EducationTab extends GetView<EducationController> {
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                   children: [
                     _progressSummary(
                       context,
@@ -62,6 +67,14 @@ class EducationTab extends GetView<EducationController> {
                       progress: progress,
                       isDark: isDark,
                     ),
+                    if (promotePosttest) ...[
+                      const SizedBox(height: 16),
+                      GlobalPosttestCard(
+                        status: posttestStatus,
+                        now: now,
+                        onStartPosttest: _openGlobalPosttest,
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -103,6 +116,14 @@ class EducationTab extends GetView<EducationController> {
                         ],
                       ],
                     ),
+                    if (!promotePosttest) ...[
+                      const SizedBox(height: 20),
+                      GlobalPosttestCard(
+                        status: posttestStatus,
+                        now: now,
+                        onStartPosttest: _openGlobalPosttest,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -118,6 +139,16 @@ class EducationTab extends GetView<EducationController> {
     Get.toNamed(
       Routes.EDUCATION_MODULE_DETAIL,
       arguments: moduleId,
+    )?.then((_) {
+      controller.fetchModules(forceRefresh: true);
+    });
+  }
+
+  void _openGlobalPosttest() {
+    controller.fetchGlobalPosttest();
+    Get.toNamed(
+      Routes.EDUCATION_POSTTEST,
+      arguments: const {'global': true},
     )?.then((_) {
       controller.fetchModules(forceRefresh: true);
     });
@@ -377,7 +408,9 @@ class EducationTab extends GetView<EducationController> {
                   ),
                   icon: const Icon(Icons.play_arrow_rounded, size: 20),
                   label: Text(
-                    nextModule.progressPercentage > 0
+                    !nextModule.hasPretest
+                        ? 'Mulai Pre-Test Modul ${nextModule.moduleNumber}'
+                        : nextModule.progressPercentage > 0
                         ? 'Lanjutkan Modul ${nextModule.moduleNumber}'
                         : 'Mulai Modul ${nextModule.moduleNumber}',
                     textAlign: TextAlign.center,
@@ -412,21 +445,28 @@ class EducationTab extends GetView<EducationController> {
     final progress = module.progressPercentage.clamp(0, 100);
     final completed = progress == 100;
     final started = progress > 0 && !completed;
+    final needsPretest = !module.hasPretest && !completed;
     final status = completed
         ? 'Selesai'
         : started
         ? 'Sedang dipelajari'
+        : needsPretest
+        ? 'Pre-Test wajib'
         : 'Belum dimulai';
     final action = completed
         ? 'Baca lagi'
         : started
         ? 'Lanjutkan'
+        : needsPretest
+        ? 'Mulai Pre-Test'
         : 'Buka materi';
     final secondaryColor = isDark
         ? AppTheme.textSecondaryDark
         : AppTheme.textSecondaryLight;
     final statusColor = completed
         ? (isDark ? const Color(0xFF4ADE80) : AppTheme.success)
+        : needsPretest
+        ? (isDark ? const Color(0xFFFBBF24) : AppTheme.warning)
         : secondaryColor;
 
     return Semantics(

@@ -112,6 +112,74 @@ class ApiService {
     }
   }
 
+  static Future<ApiResponse<dynamic>> put(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    bool auth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+      final response = await http
+          .put(
+            uri,
+            headers: _buildHeaders(auth: auth),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(const Duration(seconds: 25));
+      return _handleResponse(response, auth: auth);
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message:
+            'Server belum merespons. Permintaan mungkin sudah diproses; periksa hasil sebelum mengirim ulang.',
+        statusCode: 0,
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'Koneksi internet bermasalah. Periksa koneksi Anda.',
+        statusCode: 0,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Terjadi kesalahan sistem: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
+  static Future<ApiResponse<dynamic>> delete(
+    String endpoint, {
+    bool auth = true,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+      final response = await http
+          .delete(uri, headers: _buildHeaders(auth: auth))
+          .timeout(const Duration(seconds: 25));
+      return _handleResponse(response, auth: auth);
+    } on TimeoutException {
+      return ApiResponse(
+        success: false,
+        message: 'Server belum merespons. Silakan coba lagi.',
+        statusCode: 0,
+      );
+    } on SocketException {
+      return ApiResponse(
+        success: false,
+        message: 'Koneksi internet bermasalah. Periksa koneksi Anda.',
+        statusCode: 0,
+      );
+    } catch (e) {
+      return ApiResponse(
+        success: false,
+        message: 'Terjadi kesalahan sistem: $e',
+        statusCode: 500,
+      );
+    }
+  }
+
   static ApiResponse<dynamic> _handleResponse(
     http.Response response, {
     required bool auth,

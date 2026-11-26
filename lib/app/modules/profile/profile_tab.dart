@@ -4,6 +4,7 @@ import '../../core/constants/api_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_view.dart';
 import '../../data/models/user_model.dart';
+import '../../routes/app_pages.dart';
 import '../legal/widgets/legal_links.dart';
 import 'profile_controller.dart';
 
@@ -44,6 +45,10 @@ class ProfileTab extends GetView<ProfileController> {
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                           children: [
                             _ProfileCard(user: user),
+                            if (user.isAdmin) ...[
+                              const SizedBox(height: 20),
+                              _AdminMenuSection(),
+                            ],
                             const SizedBox(height: 20),
                             _AcademicDetails(user: user),
                             const SizedBox(height: 16),
@@ -216,6 +221,29 @@ class _ProfileCard extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium,
                 ),
+                if (user.isAdmin) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: dark
+                          ? AppTheme.softAccentSurfaceDark
+                          : AppTheme.primary50,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    ),
+                    child: Text(
+                      'Peran: Admin',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: dark ? AppTheme.primary200 : AppTheme.primary900,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -440,6 +468,68 @@ class _AcademicDetails extends StatelessWidget {
                 );
               },
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AdminMenuSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Menu Admin',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              ListTile(
+                key: const ValueKey('profile-admin-pretest-tile'),
+                minVerticalPadding: 12,
+                leading: Icon(
+                  Icons.assignment_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text(
+                  'Kelola Pre-Test',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  'Kelola soal Pre-Test berdasarkan masing-masing modul.',
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.toNamed(Routes.ADMIN_PRETEST),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                key: const ValueKey('profile-admin-posttest-tile'),
+                minVerticalPadding: 12,
+                leading: Icon(
+                  Icons.quiz_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text(
+                  'Kelola Post-Test',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text(
+                  'Kelola soal Post-Test Akhir (terbuka 3 hari setelah semua modul selesai).',
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.toNamed(Routes.ADMIN_POSTTEST),
+              ),
+            ],
           ),
         ),
       ],

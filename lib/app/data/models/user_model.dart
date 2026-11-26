@@ -2,6 +2,7 @@ class UserModel {
   final int id;
   final String name;
   final String? email;
+  final String? role;
   final String? avatar;
   final String? initials;
   final int? usia;
@@ -18,6 +19,7 @@ class UserModel {
     required this.id,
     required this.name,
     this.email,
+    this.role,
     this.avatar,
     this.initials,
     this.usia,
@@ -31,11 +33,24 @@ class UserModel {
     this.streakDays = 0,
   });
 
+  bool get isAdmin {
+    final normalized = role?.trim().toLowerCase() ?? '';
+    return normalized == 'admin' ||
+        normalized == 'super_admin' ||
+        normalized == 'superadmin';
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final rawRole = json['role']?.toString().trim();
+    final resolvedRole = (rawRole != null && rawRole.isNotEmpty)
+        ? rawRole
+        : (json['is_admin'] == true ? 'admin' : null);
+
     return UserModel(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
       name: json['name']?.toString() ?? '',
       email: json['email']?.toString(),
+      role: resolvedRole,
       avatar: json['avatar']?.toString(),
       initials: json['initials']?.toString(),
       usia: json['usia'] is int ? json['usia'] : int.tryParse(json['usia']?.toString() ?? ''),
@@ -55,6 +70,7 @@ class UserModel {
       'id': id,
       'name': name,
       'email': email,
+      'role': role,
       'avatar': avatar,
       'initials': initials,
       'usia': usia,
